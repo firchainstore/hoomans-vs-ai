@@ -1,0 +1,6 @@
+[
+  { "id": "remove_ads", "type": "nonconsumable", "nameKey": "product.remove_ads", "descKey": "product.remove_ads.desc",
+    "fakePrice": "US$2.99", "grants": { "removeAds": true } },
+  { "id": "starter_pack", "type": "nonconsumable", "nameKey": "product.starter_pack", "descKey": "product.starter_pack.desc",
+    "fakePrice": "US$1.99", "grants": { "weapons": ["scatter", "smg"], "skins": ["ember"], "coins": 500 } }
+]

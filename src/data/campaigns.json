@@ -1,0 +1,13 @@
+[
+  { "id": "resistance", "nameKey": "campaign.resistance", "active": true, "missions": ["m1", "m2", "m3", "m4", "m5", "m6"] },
+  { "id": "machines", "nameKey": "campaign.machines", "active": false, "missions": [],
+    "_note": "Campaña 1.1 (NO activa). Para activarla: definir las misiones en missions.json con campaign='machines', listar sus ids en 'missions' y poner active=true. Ver docs/GDD.md.",
+    "outline": [
+      { "id": "x1", "workingTitle": "Día Cero", "idea": "Ciudad intacta. Un asistente doméstico despierta. Tutorial como dron." },
+      { "id": "x2", "workingTitle": "Apagón", "idea": "Tumbar 3 subestaciones eléctricas (objetivo tipo hack)." },
+      { "id": "x3", "workingTitle": "Hora Pico", "idea": "Escoltar un camión autónomo por el puente (objetivo defend)." },
+      { "id": "x4", "workingTitle": "Campus Cero: Origen", "idea": "Defender el centro de datos de Nimbora 120 s (survive)." },
+      { "id": "x5", "workingTitle": "Toque de Queda", "idea": "Mini-jefe: vehículo blindado de la milicia humana (no humanos visibles)." },
+      { "id": "x6", "workingTitle": "TUTELA Asciende", "idea": "Proteger el núcleo mientras se completa la carga (defend + boss)." }
+    ] }
+]

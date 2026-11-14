@@ -1,0 +1,5 @@
+[
+  { "id": "damage", "nameKey": "upgrade.damage", "stat": "damageMult", "perLevel": 0.12, "maxLevel": 5, "baseCost": 60, "costGrowth": 1.7 },
+  { "id": "health", "nameKey": "upgrade.health", "stat": "maxHp", "perLevel": 20, "maxLevel": 5, "baseCost": 50, "costGrowth": 1.7 },
+  { "id": "speed", "nameKey": "upgrade.speed", "stat": "speedMult", "perLevel": 0.06, "maxLevel": 5, "baseCost": 50, "costGrowth": 1.7 }
+]

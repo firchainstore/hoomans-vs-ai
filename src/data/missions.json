@@ -1,0 +1,64 @@
+[
+  { "id": "m1", "campaign": "resistance", "nameKey": "mission.m1.name", "briefKey": "mission.m1.brief", "reward": 60,
+    "arena": { "w": 1300, "h": 800, "tint": "0xb9a8ff" },
+    "objective": { "type": "eliminate" },
+    "hints": [ { "at": 0, "key": "hint.move" }, { "at": 5, "key": "hint.aim" }, { "at": 11, "key": "hint.destroy" }, { "at": 30, "key": "hint.shooters" } ],
+    "spawns": [
+      { "at": 7, "enemy": "drone", "count": 3 },
+      { "at": 18, "enemy": "drone", "count": 4 },
+      { "at": 31, "enemy": "drone", "count": 4 }, { "at": 31, "enemy": "android", "count": 1 },
+      { "at": 46, "enemy": "android", "count": 2 }, { "at": 46, "enemy": "drone", "count": 5 }
+    ] },
+  { "id": "m2", "campaign": "resistance", "nameKey": "mission.m2.name", "briefKey": "mission.m2.brief", "reward": 100,
+    "arena": { "w": 1500, "h": 950, "tint": "0xffc09a" },
+    "objective": { "type": "survive", "seconds": 90 },
+    "spawns": [
+      { "at": 1, "enemy": "drone", "count": 2, "every": 2.6, "until": 90 },
+      { "at": 15, "enemy": "android", "count": 1, "every": 8, "until": 90 },
+      { "at": 45, "enemy": "drone", "count": 3, "every": 6, "until": 90 },
+      { "at": 60, "enemy": "mech", "count": 1 }
+    ] },
+  { "id": "m3", "campaign": "resistance", "nameKey": "mission.m3.name", "briefKey": "mission.m3.brief", "reward": 140,
+    "arena": { "w": 2600, "h": 700, "tint": "0x9ad0ff" },
+    "playerStart": { "x": 320, "y": 350 },
+    "objective": { "type": "defend", "convoy": { "hp": 420, "speed": 17, "from": { "x": 200, "y": 350 }, "to": { "x": 2400, "y": 350 } } },
+    "spawns": [
+      { "at": 3, "enemy": "drone", "count": 2, "every": 4, "where": "objective" },
+      { "at": 14, "enemy": "android", "count": 2, "every": 11, "where": "objective" },
+      { "at": 65, "enemy": "mech", "count": 1, "where": "objective" },
+      { "at": 105, "enemy": "mech", "count": 1, "where": "objective" }
+    ] },
+  { "id": "m4", "campaign": "resistance", "nameKey": "mission.m4.name", "briefKey": "mission.m4.brief", "reward": 180,
+    "arena": { "w": 1800, "h": 1200, "tint": "0xa8ffe9" },
+    "playerStart": { "x": 900, "y": 600 },
+    "objective": { "type": "hack", "secondsEach": 8, "radius": 85,
+      "terminals": [ { "x": 350, "y": 300 }, { "x": 1450, "y": 350 }, { "x": 900, "y": 980 } ] },
+    "spawns": [
+      { "at": 0, "enemy": "turret", "count": 1, "where": { "x": 520, "y": 220 } },
+      { "at": 0, "enemy": "turret", "count": 1, "where": { "x": 260, "y": 470 } },
+      { "at": 0, "enemy": "turret", "count": 1, "where": { "x": 1290, "y": 250 } },
+      { "at": 0, "enemy": "turret", "count": 1, "where": { "x": 1560, "y": 520 } },
+      { "at": 0, "enemy": "turret", "count": 1, "where": { "x": 730, "y": 1060 } },
+      { "at": 0, "enemy": "turret", "count": 1, "where": { "x": 1080, "y": 1050 } },
+      { "at": 6, "enemy": "drone", "count": 2, "every": 6 },
+      { "at": 20, "enemy": "android", "count": 2, "every": 12 }
+    ] },
+  { "id": "m5", "campaign": "resistance", "nameKey": "mission.m5.name", "briefKey": "mission.m5.brief", "reward": 240,
+    "arena": { "w": 1500, "h": 1000, "tint": "0x7f8cff" },
+    "objective": { "type": "boss", "enemy": "hunter" },
+    "spawns": [
+      { "at": 1, "enemy": "drone", "count": 4 },
+      { "at": 8, "enemy": "hunter", "count": 1 },
+      { "at": 25, "enemy": "android", "count": 1, "every": 14 }
+    ] },
+  { "id": "m6", "campaign": "resistance", "nameKey": "mission.m6.name", "briefKey": "mission.m6.brief", "reward": 400,
+    "arena": { "w": 1400, "h": 1000, "tint": "0xff9ac2" },
+    "playerStart": { "x": 700, "y": 860 },
+    "objective": { "type": "boss", "enemy": "core" },
+    "spawns": [
+      { "at": 0, "enemy": "turret", "count": 1, "where": { "x": 250, "y": 220 } },
+      { "at": 0, "enemy": "turret", "count": 1, "where": { "x": 1150, "y": 220 } },
+      { "at": 3, "enemy": "core", "count": 1, "where": { "x": 700, "y": 380 } },
+      { "at": 20, "enemy": "drone", "count": 3, "every": 9 }
+    ] }
+]

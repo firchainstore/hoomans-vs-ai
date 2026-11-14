@@ -1,0 +1,25 @@
+[
+  { "id": "drone", "nameKey": "enemy.drone", "shape": "tri", "color": "0x35e0ff", "hp": 20, "speed": 150, "radius": 12,
+    "contactDamage": 8, "coins": 1, "behavior": "chase", "cost": 1, "minWave": 1 },
+  { "id": "android", "nameKey": "enemy.android", "shape": "square", "color": "0xb07cff", "hp": 45, "speed": 85, "radius": 14,
+    "contactDamage": 10, "coins": 2, "behavior": "shooter", "range": 270, "cost": 3, "minWave": 3,
+    "attacks": [{ "pattern": "aimed", "count": 1, "spreadDeg": 0, "cooldown": 1.7, "bulletSpeed": 220, "damage": 8 }] },
+  { "id": "turret", "nameKey": "enemy.turret", "shape": "hex", "color": "0xff3d81", "hp": 90, "speed": 0, "radius": 18,
+    "contactDamage": 0, "coins": 4, "behavior": "turret", "range": 430, "cost": 5, "minWave": 5,
+    "attacks": [{ "pattern": "aimed", "count": 1, "spreadDeg": 0, "cooldown": 1.15, "bulletSpeed": 260, "damage": 9 }] },
+  { "id": "mech", "nameKey": "enemy.mech", "shape": "mech", "color": "0xff7a3d", "hp": 260, "speed": 55, "radius": 24,
+    "contactDamage": 20, "coins": 8, "behavior": "shooter", "range": 320, "cost": 9, "minWave": 7,
+    "attacks": [{ "pattern": "aimed", "count": 3, "spreadDeg": 30, "cooldown": 2.2, "bulletSpeed": 200, "damage": 10 }] },
+  { "id": "hunter", "nameKey": "enemy.hunter", "shape": "boss", "color": "0xff3d81", "hp": 1300, "speed": 110, "radius": 30,
+    "contactDamage": 22, "coins": 60, "behavior": "chase", "boss": true, "enrageAt": 0.4,
+    "attacks": [{ "pattern": "aimed", "count": 5, "spreadDeg": 50, "cooldown": 2.0, "bulletSpeed": 240, "damage": 10 }],
+    "dash": { "cooldown": 4.5, "speed": 470, "duration": 0.45 },
+    "summon": { "enemy": "drone", "count": 3, "cooldown": 10 } },
+  { "id": "core", "nameKey": "enemy.core", "shape": "core", "color": "0xe8f6ff", "hp": 3000, "speed": 0, "radius": 46,
+    "contactDamage": 25, "coins": 150, "behavior": "turret", "boss": true, "enrageAt": 0.5, "range": 2000,
+    "attacks": [
+      { "pattern": "radial", "count": 14, "spreadDeg": 360, "cooldown": 2.4, "bulletSpeed": 170, "damage": 9 },
+      { "pattern": "aimed", "count": 3, "spreadDeg": 24, "cooldown": 1.5, "bulletSpeed": 250, "damage": 10 }
+    ],
+    "summon": { "enemy": "android", "count": 2, "cooldown": 12 } }
+]

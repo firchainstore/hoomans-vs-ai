@@ -1,0 +1,7 @@
+{
+  "player": { "hp": 100, "speed": 215, "radius": 13, "invulnSeconds": 0.6 },
+  "maxEnemiesAlive": 60,
+  "healDrop": { "chance": 0.06, "amount": 20 },
+  "continueHpFraction": 0.6,
+  "endless": { "arena": { "w": 1500, "h": 1000, "tint": "0x9a8cff" }, "pauseBetweenWaves": 3, "hpGrowthPerWave": 0.06, "bossEvery": 10 }
+}

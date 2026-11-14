@@ -1,0 +1,4 @@
+[
+  { "id": "default", "nameKey": "skin.default", "color": "0xffb347" },
+  { "id": "ember", "nameKey": "skin.ember", "color": "0xff5e5b" }
+]

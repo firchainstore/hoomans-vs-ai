@@ -82,6 +82,15 @@ android/                     Proyecto Capacitor generado (se compila en el PC de
 - **Visión original del autor** (más amplia que la v1): elegir bando. Humanos = mundo apocalíptico;
   Máquinas = San Francisco actual, soleado y próspero, que se va degradando hasta el apocalipsis.
 
+- **Dirección de arte pedida por el autor (2026-11-14):** los humanos son GENTE COMÚN (oficios normales:
+  enfermera, mecánico, maestra, repartidor…) obligada a sobrevivir de un día para otro, no héroes de acción
+  ni soldados. Las máquinas deben dar miedo: industriales, esqueléticas, frías. Mandó dos referencias por
+  enlace que el entorno no pudo abrir; pedirle las imágenes adjuntas antes de rediseñar personajes.
+- **Nombre:** "Humans vs Ai: Battle Simulator" (Abstract Software) ya existe en Google Play y App Store,
+  así que "Humans/Hoomans vs AI" se confunde con él. Nombre definitivo pendiente de que el autor elija.
+- **Distribución:** Google Play sigue siendo el objetivo; el mismo build sirve como web (Cloudflare Pages
+  gratis alcanza de sobra: el juego pesa ~1,3 MB) para demo y captación. Campaña humana primero.
+
 ## Cosas que NO están verificadas
 - El APK/AAB nunca se ha compilado (no hay Android SDK en el entorno de desarrollo en la nube).
   `MainActivity.java` (pantalla completa) está escrito pero sin compilar.

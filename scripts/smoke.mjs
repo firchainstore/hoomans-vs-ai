@@ -82,13 +82,29 @@ try {
     await page.screenshot({ path: `${shots}/${name}.png` });
     console.log(`arranca: ${name}`);
   }
-  // 3) Pausa
+  // 3) Oleadas: morir → continuar con anuncio falso → morir otra vez → récord guardado
+  const die = () => page.evaluate(() => { const s = window.__GAME__.scene.getScene('Game'); s.invuln = 0; s.hurtPlayer(99999); });
+  const state = () => page.evaluate(() => { const g = window.__GAME__, s = g.scene.getScene('Game');
+    return { result: g.scene.isActive('Result'), hp: s.hp, ended: s.ended, save: JSON.parse(localStorage.getItem('hvai_save') ?? '{}') }; });
+  await die(); await sleep(1300);
+  if (!(await state()).result) errors.push('no aparece la oferta de continuar');
+  const box = await page.locator('canvas').boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2 + 10 * (box.height / 540));
+  await sleep(1600);
+  let st = await state();
+  if (st.result || st.ended || st.hp <= 0) errors.push(`continuar no revive: ${JSON.stringify({ ...st, save: 0 })}`);
+  await die(); await sleep(1300);
+  st = await state();
+  if (!st.result || !(st.save.bestWave >= 1)) errors.push('el récord de Oleadas no se guardó');
+  console.log('continuar + récord: comprobado');
+  await start(page, { mode: 'endless' }); await sleep(500);
+  // 4) Pausa
   await page.evaluate(() => window.__GAME__.scene.getScene('Game').pauseGame());
   await sleep(300);
   if (!(await page.evaluate(() => window.__GAME__.scene.isActive('Pause')))) errors.push('la pausa no se abre');
   await page.close();
 
-  // 4) Partidas completas con bot (en paralelo, una pestaña por misión)
+  // 5) Partidas completas con bot (en paralelo, una pestaña por misión)
   if (FULL) {
     // Un navegador por misión y de 2 en 2: las pestañas en segundo plano se ralentizan y falsean los tiempos.
     const queue = [...missions];

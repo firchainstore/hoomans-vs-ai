@@ -23,6 +23,14 @@ Leyenda de complejidad: **[ALTA]** = requiere el modelo más capaz y/o pruebas e
 - [x] Rehecho visual completo (el autor rechazó las formas planas): personajes y máquinas con volumen,
       asfalto con cráteres y escombros, luces aditivas, fogonazos, quemaduras, viñeta, brasas y menú ilustrado.
 
+## Decisión abierta — pasar el juego a 3D
+- [x] Prototipo 3D jugable (`proto3d.html`) para que el autor compare con el 2D.
+- [ ] **[TÚ]** Decidir: ¿seguimos en 3D? Si sí:
+- [ ] **[ALTA]** Portar la escena de juego a Three.js conectándola a `MissionDirector`/`EndlessDirector`,
+      datos JSON, economía y guardado (todo eso se reutiliza). Misiones 1–6 con escenarios 3D propios.
+- [ ] **[ALTA]** Medir rendimiento en un teléfono de gama media-baja; ajustes de calidad (sombras, bloom, resolución).
+- [ ] **[ECON]** Más modelos por código: dron, torreta, mech, jefe; personajes (Marta y otros oficios).
+
 ## Pendiente — aspecto visual (prioridad del autor)
 - [ ] **[TÚ]** Decidir si el arte procedural actual basta o se consiguen sprites reales (ver `public/assets/README.md`).
 - [ ] **[ALTA]** Edificios en ruinas, muros y coches CON colisión (hoy el decorado es plano): es lo que

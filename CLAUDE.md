@@ -96,6 +96,14 @@ android/                     Proyecto Capacitor generado (se compila en el PC de
 - **Distribución:** Google Play sigue siendo el objetivo; el mismo build sirve como web (Cloudflare Pages
   gratis alcanza de sobra: el juego pesa ~1,3 MB) para demo y captación. Campaña humana primero.
 
+- **Prototipo 3D (2026-11-14):** el autor considera insuficiente el aspecto del juego 2D aun tras el rehecho
+  ("ni Atari"); lo que esperaba se parece a los juegos 3D de navegador hechos con IA. Se creó
+  `proto3d.html` + `src/proto3d/main.ts` (Three.js: calle en ruinas, niebla, sombras, bloom, robots
+  esqueléticos cromados que se desarman, superviviente con ropa de calle, doble stick). Es una prueba de
+  dirección visual, NO está conectado a misiones/economía. Si el autor lo aprueba, el plan es portar
+  `GameScene` a Three.js reutilizando `src/core` y los JSON sin cambios, y dejar Phaser solo para menús o retirarlo.
+  Riesgo a vigilar: rendimiento 3D en gama baja (bajar sombras/bloom, fusionar geometrías, instancing).
+
 ## Cosas que NO están verificadas
 - El APK/AAB nunca se ha compilado (no hay Android SDK en el entorno de desarrollo en la nube).
   `MainActivity.java` (pantalla completa) está escrito pero sin compilar.

@@ -6,8 +6,12 @@ import { FakeAdService, type AdService } from './AdService';
 import { FakePurchaseService, type PurchaseService } from './PurchaseService';
 
 const memory = new Map<string, string>();
-const storage = typeof localStorage !== 'undefined' ? localStorage
-  : { getItem: (k: string) => memory.get(k) ?? null, setItem: (k: string, v: string) => void memory.set(k, v) };
+// En algunos WebView o marcos aislados, tocar localStorage lanza una excepción: se usa memoria.
+function pickStorage() {
+  try { localStorage.getItem(cfg.saveKey); return localStorage; }
+  catch { return { getItem: (k: string) => memory.get(k) ?? null, setItem: (k: string, v: string) => void memory.set(k, v) }; }
+}
+const storage = pickStorage();
 
 export const saves = new SaveManager(storage, cfg.saveKey, cfg.defaultLang);
 export const ads: AdService = new FakeAdService();

@@ -17,7 +17,7 @@ export function label(scene: Phaser.Scene, x: number, y: number, text: string, s
 export interface ButtonOpts { w?: number; h?: number; fill?: number; color?: string; size?: number; enabled?: boolean }
 export function button(scene: Phaser.Scene, x: number, y: number, text: string, onClick: () => void, o: ButtonOpts = {}) {
   const { w = 280, h = 52, fill = COLORS.panelHi, color = TEXT.main, size = 20, enabled = true } = o;
-  const bg = scene.add.rectangle(0, 0, w, h, fill).setStrokeStyle(2, enabled ? COLORS.accent : 0x4a4460);
+  const bg = scene.add.rectangle(0, 0, w, h, fill, 0.92).setStrokeStyle(2, enabled ? COLORS.accent : 0x4a4460);
   const txt = label(scene, 0, 0, text, size, enabled ? color : TEXT.dim);
   const c = scene.add.container(x, y, [bg, txt]);
   if (enabled) {
@@ -30,10 +30,10 @@ export function button(scene: Phaser.Scene, x: number, y: number, text: string, 
 }
 
 /** Fondo común de los menús + título + botón de volver opcional. */
-export function menuFrame(scene: Phaser.Scene, title: string, backTo?: string) {
+export function menuFrame(scene: Phaser.Scene, title: string, backTo?: string, dim = 0.72) {
   const { width, height } = scene.scale;
-  scene.add.tileSprite(0, 0, width, height, 'ground').setOrigin(0).setTint(0x8f7fd0);
-  scene.add.rectangle(0, 0, width, height, COLORS.bg, 0.55).setOrigin(0);
+  scene.add.image(0, 0, 'menu_bg').setOrigin(0);
+  scene.add.rectangle(0, 0, width, height, COLORS.bg, dim).setOrigin(0);
   if (title) label(scene, width / 2, 36, title, 30, TEXT.accent).setFontStyle('bold');
   if (backTo) button(scene, 70, 36, '‹', () => scene.scene.start(backTo), { w: 84, h: 44, size: 28 });
 }

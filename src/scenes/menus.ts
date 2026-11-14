@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import cfg from '../config/game.config.json';
 import { applyPurchase, buyUpgrade, buyWeapon, equipWeapon, missionUnlocked, upgradeCost } from '../core/Economy';
-import { CAMPAIGNS, PRODUCTS, SKINS, UPGRADES, WEAPONS, hex, missionDef, productDef, skinDef } from '../core/data';
+import { CAMPAIGNS, PRODUCTS, SKINS, UPGRADES, WEAPONS, missionDef, productDef, skinDef } from '../core/data';
 import { sfx } from '../game/Sfx';
 import { buildTextures } from '../game/textures';
 import { nextLang, setLang, t } from '../i18n/i18n';
@@ -31,12 +31,12 @@ export class MenuScene extends Phaser.Scene {
   constructor() { super('Menu'); }
   create() {
     const { width, height } = this.scale, cx = width / 2;
-    menuFrame(this, '');
+    menuFrame(this, '', undefined, 0.3);
     coinsLabel(this);
     // Título partido en dos colores: la primera palabra (humanos) en ámbar, el resto (máquinas) en cian.
     const [first, ...rest] = cfg.name.split(' ');
-    const a = label(this, 0, 0, first, 52, TEXT.accent).setFontStyle('bold').setOrigin(0, 0.5);
-    const b = label(this, a.width + 14, 0, rest.join(' '), 52, TEXT.machine).setFontStyle('bold').setOrigin(0, 0.5);
+    const a = label(this, 0, 0, first.toUpperCase(), 54, TEXT.accent).setFontStyle('bold').setOrigin(0, 0.5).setShadow(0, 0, '#ff8a3d', 18, false, true);
+    const b = label(this, a.width + 14, 0, rest.join(' ').toUpperCase(), 54, TEXT.machine).setFontStyle('bold').setOrigin(0, 0.5).setShadow(0, 0, '#35e0ff', 18, false, true);
     this.add.container(cx - (a.width + 14 + b.width) / 2, 78, [a, b]);
     label(this, cx, 124, t('menu.tagline'), 17, TEXT.dim);
     const s = saves.data, col = Math.min(170, width * 0.18);
@@ -93,7 +93,7 @@ export class WorkshopScene extends Phaser.Scene {
         { w: 130, h: 46, size: 18, enabled: cost !== null && s.coins >= cost });
     });
     const skin = skinDef(s.skin);
-    this.add.image(lx - colW / 2 + 30, 420, 'player').setTint(hex(skin.color)).setScale(1.3);
+    this.add.image(lx - colW / 2 + 30, 420, `player_${skin.id}`).setScale(0.8);
     label(this, lx - colW / 2 + 60, 420, `${t('workshop.skin')}: ${t(skin.nameKey)}`, 17).setOrigin(0, 0.5);
     button(this, lx + colW / 2 - 76, 420, t('workshop.change'), act(() => {
       const owned = SKINS.filter((k) => s.skins.includes(k.id));

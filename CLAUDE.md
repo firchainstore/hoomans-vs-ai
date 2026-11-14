@@ -29,7 +29,8 @@ src/i18n/{es,en}.json        Todos los textos. i18n.ts → t('clave', {params})
 src/core/                    Lógica pura SIN Phaser (probada en tests/): MissionDirector, WaveGenerator
                              (+EndlessDirector), Economy, SaveManager, data.ts (acceso tipado), types.ts
 src/services/                AdService, PurchaseService (interfaces + Fake*), index.ts elige implementación
-src/game/                    Phaser: textures.ts (placeholders), entities.ts (Enemy, Bullet), Sticks.ts, Sfx.ts
+src/game/                    Phaser: textures.ts (arte procedural en canvas), atmosphere.ts (decorado, viñeta,
+                             brasas), entities.ts (Enemy, Bullet), Sticks.ts, Sfx.ts
 src/scenes/                  GameScene.ts (única escena de juego), overlays.ts (Pausa, Resultado),
                              menus.ts (Boot, Menú, Misiones, Taller, Tienda, Ajustes), ui.ts (botones, colores)
 tests/                       Vitest. data.test.ts valida integridad de datos y traducciones
@@ -71,6 +72,15 @@ android/                     Proyecto Capacitor generado (se compila en el PC de
 - **Campaña de las máquinas**: solo datos en `campaigns.json` (`active: false`, con `outline`).
 - **appId `com.firchain.hoomansvsai`**: provisional; es permanente tras la primera subida a Play.
 - `capacitor.config.ts` lee el JSON con `readFileSync` (el CLI de Capacitor no admite `import` de JSON).
+
+- **Arte procedural en Canvas 2D** (`textures.ts`): degradados, sombras y brillos dibujados una vez al
+  arrancar; cero coste por frame. El autor rechazó la primera versión de formas planas ("parece Atari"):
+  **el aspecto visual es prioridad**. No volver a formas simples; cualquier elemento nuevo debe llevar
+  sombra, volumen y brillo, y seguir el tono oscuro de ruinas con máquinas luminosas.
+- `SPRITE_SCALE` (1,45) agranda dibujo y colisión de personajes a la vez; los `radius` de los JSON son lógicos.
+- El juego se renderiza a 540 px de alto y se escala (rápido en gama baja, algo suave en pantallas grandes).
+- **Visión original del autor** (más amplia que la v1): elegir bando. Humanos = mundo apocalíptico;
+  Máquinas = San Francisco actual, soleado y próspero, que se va degradando hasta el apocalipsis.
 
 ## Cosas que NO están verificadas
 - El APK/AAB nunca se ha compilado (no hay Android SDK en el entorno de desarrollo en la nube).

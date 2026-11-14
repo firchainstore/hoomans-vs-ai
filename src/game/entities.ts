@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import type { EnemyDef } from '../core/types';
-import { PAD } from './textures';
+import { PAD, SPRITE_SCALE as K } from './textures';
 
 /** Lo que un enemigo necesita saber del mundo. Lo implementa GameScene. */
 export interface World {
@@ -42,7 +42,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setTexture(`enemy_${def.id}`);
     this.enableBody(true, x, y, true, true);
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setCircle(def.radius, PAD, PAD);
+    body.setCircle(def.radius * K, PAD * K, PAD * K);
     body.setImmovable(def.speed === 0);
     body.pushable = def.speed !== 0 && !def.boss;
     this.hp = this.maxHp = def.hp * hpMult;
@@ -72,7 +72,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     else {
       let dir = 1;
       if (def.behavior === 'shooter') { const r = def.range ?? 250; dir = dist < r * 0.55 ? -0.6 : dist < r * 0.85 ? 0 : 1; }
-      if (dist < def.radius + 8) dir = 0; // no encimarse sobre el objetivo
+      if (dist < (def.radius + 8) * K) dir = 0; // no encimarse sobre el objetivo
       const sp = def.behavior === 'turret' ? 0 : def.speed * (rage > 1 ? 1.25 : 1) * dir;
       body.setVelocity((dx / dist) * sp, (dy / dist) * sp);
       if (def.dash && (this.dashCd -= dt) <= 0 && dist < 520) {

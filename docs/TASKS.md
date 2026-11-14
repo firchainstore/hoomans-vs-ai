@@ -20,6 +20,19 @@ Leyenda de complejidad: **[ALTA]** = requiere el modelo más capaz y/o pruebas e
 - [x] Proyecto `android/` generado (horizontal, pantalla completa). **Sin compilar.**
 - [x] Documentación: CLAUDE.md, GDD, BUILD_ANDROID, MONETIZATION, PLAYSTORE, assets/README.
 
+- [x] Rehecho visual completo (el autor rechazó las formas planas): personajes y máquinas con volumen,
+      asfalto con cráteres y escombros, luces aditivas, fogonazos, quemaduras, viñeta, brasas y menú ilustrado.
+
+## Pendiente — aspecto visual (prioridad del autor)
+- [ ] **[TÚ]** Decidir si el arte procedural actual basta o se consiguen sprites reales (ver `public/assets/README.md`).
+- [ ] **[ALTA]** Edificios en ruinas, muros y coches CON colisión (hoy el decorado es plano): es lo que
+      más falta para que parezca una ciudad. Requiere cuerpos estáticos por misión y que los enemigos los rodeen.
+- [ ] **[ALTA]** Tema visual "San Francisco actual" para la campaña de las máquinas: calles limpias, luz
+      de día, vegetación, tranvía, y degradación progresiva misión a misión.
+- [ ] **[ECON]** Animación de pasos/retroceso al disparar, casquillos, humo en máquinas dañadas.
+- [ ] **[ECON]** Decorado específico por misión (desguace, puente con barandas y agua, campus, sala del núcleo).
+- [ ] **[ECON]** Opción de calidad alta: renderizar a 1080 px en teléfonos potentes.
+
 ## Pendiente — imprescindible para publicar
 - [ ] **[TÚ]** Compilar e instalar en un teléfono real siguiendo `BUILD_ANDROID.md`; anotar errores,
       fluidez (objetivo 60 fps) y sensación de los sticks.

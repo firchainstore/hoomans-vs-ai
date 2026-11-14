@@ -8,7 +8,8 @@ import { UPGRADES } from '../core/data';
 import { Bullet, Enemy, type World } from '../game/entities';
 import { sfx } from '../game/Sfx';
 import { Sticks } from '../game/Sticks';
-import { PAD } from '../game/textures';
+import { addAtmosphere, decorateArena } from '../game/atmosphere';
+import { PAD, SPRITE_SCALE as K } from '../game/textures';
 import { t } from '../i18n/i18n';
 import { saves } from '../services';
 import { COLORS, TEXT, button, label } from './ui';
@@ -33,6 +34,11 @@ export class GameScene extends Phaser.Scene implements World {
   private eBullets!: Phaser.Physics.Arcade.Group;
   private heals!: Phaser.Physics.Arcade.Group;
   private sparks!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private flashes!: Phaser.GameObjects.Particles.ParticleEmitter;
+  private light!: Phaser.GameObjects.Image;
+  private muzzle!: Phaser.GameObjects.Image;
+  private scorches: Phaser.GameObjects.Image[] = [];
+  private scorchI = 0; private muzzleT = 0;
   private sticks!: Sticks;
   private boss?: Enemy;
   private convoyHp = 0; private convoyMax = 0; private convoyT = 0;
@@ -66,12 +72,16 @@ export class GameScene extends Phaser.Scene implements World {
     this.boss = undefined; this.convoy = undefined; this.terminals = []; this.hackGfx = undefined;
 
     this.physics.world.setBounds(0, 0, arena.w, arena.h);
-    this.add.tileSprite(0, 0, arena.w, arena.h, 'ground').setOrigin(0).setTint(hex(arena.tint));
-    this.add.rectangle(arena.w / 2, arena.h / 2, arena.w, arena.h).setStrokeStyle(8, COLORS.danger, 0.7);
+    decorateArena(this, arena.w, arena.h, this.mission?.id ?? 'endless', hex(arena.tint));
+    addAtmosphere(this);
 
     const start = this.mission?.playerStart ?? { x: arena.w / 2, y: arena.h / 2 };
-    this.player = this.physics.add.sprite(start.x, start.y, 'player').setTint(hex(skinDef(save.skin).color)).setDepth(6);
-    (this.player.body as Phaser.Physics.Arcade.Body).setCircle(BALANCE.player.radius, PAD, PAD).setCollideWorldBounds(true);
+    this.player = this.physics.add.sprite(start.x, start.y, `player_${skinDef(save.skin).id}`).setDepth(6);
+    this.light = this.add.image(start.x, start.y, 'light').setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.16).setTint(0xffe2b8).setDepth(1.5);
+    this.muzzle = this.add.image(0, 0, 'flash').setBlendMode(Phaser.BlendModes.ADD).setScale(0.45).setDepth(7).setVisible(false);
+    this.scorches = Array.from({ length: 36 }, () => this.add.image(0, 0, 'scorch').setDepth(0.8).setVisible(false));
+    this.scorchI = 0;
+    (this.player.body as Phaser.Physics.Arcade.Body).setCircle(BALANCE.player.radius * K, PAD * K, PAD * K).setCollideWorldBounds(true);
     this.cameras.main.setBounds(0, 0, arena.w, arena.h).startFollow(this.player, true, 0.15, 0.15);
     this.cameras.main.fadeIn(250);
 
@@ -81,7 +91,10 @@ export class GameScene extends Phaser.Scene implements World {
     this.eBullets = this.physics.add.group({ classType: Bullet, maxSize: 140, runChildUpdate: true, defaultKey: 'bullet_e' });
     this.heals = this.physics.add.group({ maxSize: 8, defaultKey: 'heal' });
     this.sparks = this.add.particles(0, 0, 'particle', {
-      speed: { min: 60, max: 240 }, lifespan: 380, scale: { start: 1, end: 0 }, emitting: false,
+      speed: { min: 60, max: 260 }, lifespan: 420, scale: { start: 0.9, end: 0 }, emitting: false, blendMode: 'ADD',
+    }).setDepth(8);
+    this.flashes = this.add.particles(0, 0, 'flash', {
+      speed: 0, lifespan: 260, scale: { start: 0.5, end: 1.7 }, alpha: { start: 0.9, end: 0 }, emitting: false, blendMode: 'ADD',
     }).setDepth(8);
 
     this.setupObjective();
@@ -124,6 +137,7 @@ export class GameScene extends Phaser.Scene implements World {
       for (const p of o.terminals) {
         this.add.circle(p.x, p.y, o.radius).setStrokeStyle(2, COLORS.accent, 0.35).setDepth(1);
         this.terminals.push(this.add.image(p.x, p.y, 'terminal').setTint(COLORS.machine).setDepth(2));
+        this.add.image(p.x, p.y, 'light').setBlendMode(Phaser.BlendModes.ADD).setAlpha(0.12).setTint(COLORS.machine).setScale(0.6).setDepth(1.5);
       }
     }
   }
@@ -150,7 +164,7 @@ export class GameScene extends Phaser.Scene implements World {
         if (d.hackProgress[i] >= 1 || Phaser.Math.Distance.Between(this.player.x, this.player.y, p.x, p.y) > o.radius) continue;
         d.hackTick(i, dt);
         this.hackGfx!.clear().lineStyle(6, COLORS.accent)
-          .beginPath().arc(p.x, p.y, 34, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * d.hackProgress[i]).strokePath();
+          .beginPath().arc(p.x, p.y, 46, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * d.hackProgress[i]).strokePath();
         if (d.hackProgress[i] >= 1) { this.terminals[i].setTint(COLORS.accent); this.hackGfx!.clear(); sfx.play('pickup'); }
       }
     }
@@ -184,7 +198,7 @@ export class GameScene extends Phaser.Scene implements World {
   summon(enemyId: string, count: number, x: number, y: number) {
     for (let i = 0; i < count; i++) {
       const a = Math.random() * Math.PI * 2;
-      this.spawn({ enemy: enemyId, count: 1, where: { x: Phaser.Math.Clamp(x + Math.cos(a) * 80, 40, this.arena.w - 40), y: Phaser.Math.Clamp(y + Math.sin(a) * 80, 40, this.arena.h - 40) } });
+      this.spawn({ enemy: enemyId, count: 1, where: { x: Phaser.Math.Clamp(x + Math.cos(a) * 110, 40, this.arena.w - 40), y: Phaser.Math.Clamp(y + Math.sin(a) * 110, 40, this.arena.h - 40) } });
     }
   }
 
@@ -192,7 +206,7 @@ export class GameScene extends Phaser.Scene implements World {
   enemyFire(x: number, y: number, angle: number, speed: number, damage: number) {
     const b = this.eBullets.get(x, y) as Bullet | null;
     b?.fire(x, y, angle, speed, damage, 3.2);
-    b?.setDepth(7);
+    b?.setDepth(7).setBlendMode(Phaser.BlendModes.ADD).setScale(1.3);
   }
 
   private firePlayer() {
@@ -205,8 +219,10 @@ export class GameScene extends Phaser.Scene implements World {
       if (!b) break;
       const off = Phaser.Math.DegToRad((Math.random() - 0.5) * w.spreadDeg);
       b.fire(mx, my, ang + off, w.bulletSpeed, w.damage * this.stats.damageMult, w.range / w.bulletSpeed, w.pierce, hex(w.color));
-      b.setDepth(7);
+      b.setDepth(7).setBlendMode(Phaser.BlendModes.ADD).setScale(1.3);
     }
+    this.muzzle.setPosition(mx + Math.cos(ang) * 34, my + Math.sin(ang) * 34).setTint(hex(w.color)).setVisible(true);
+    this.muzzleT = 0.05;
     sfx.play('shoot');
   }
 
@@ -218,6 +234,7 @@ export class GameScene extends Phaser.Scene implements World {
     if (e.hp > 0) { sfx.play('hit'); return; }
     const def = e.def;
     this.explode(e.x, e.y, hex(def.color), def.boss ? 40 : 8);
+    this.scorches[this.scorchI++ % this.scorches.length].setPosition(e.x, e.y).setRotation(Math.random() * 6.28).setScale(def.radius / 14).setVisible(true);
     if (def.boss) { this.cameras.main.shake(400, 0.012); if (this.boss === e) this.boss = undefined; }
     this.coins += def.coins;
     this.coinText.setText(`◆ ${this.coins}`);
@@ -233,6 +250,8 @@ export class GameScene extends Phaser.Scene implements World {
   private explode(x: number, y: number, tint: number, n: number) {
     this.sparks.setParticleTint(tint);
     this.sparks.explode(n, x, y);
+    this.flashes.setParticleTint(tint);
+    this.flashes.explode(n > 20 ? 4 : 1, x, y);
   }
 
   private hurtPlayer(dmg: number) {
@@ -240,6 +259,7 @@ export class GameScene extends Phaser.Scene implements World {
     this.hp -= dmg;
     this.invuln = BALANCE.player.invulnSeconds;
     this.cameras.main.shake(90, 0.006);
+    this.cameras.main.flash(140, 255, 40, 70);
     sfx.play('hurt');
     this.refreshHp();
     if (this.hp <= 0) { this.explode(this.player.x, this.player.y, COLORS.accent, 20); this.director.fail(); }
@@ -357,6 +377,8 @@ export class GameScene extends Phaser.Scene implements World {
     if (s.firing) p.rotation = s.aim.angle();
     else if (s.move.x || s.move.y) p.rotation = s.move.angle();
     this.fireCd -= dt;
+    this.light.setPosition(p.x, p.y);
+    if (this.muzzleT > 0 && (this.muzzleT -= dt) <= 0) this.muzzle.setVisible(false);
     if (s.firing && this.fireCd <= 0) this.firePlayer();
     if (this.invuln > 0) { this.invuln -= dt; p.setAlpha(this.invuln > 0 ? 0.45 : 1); }
 

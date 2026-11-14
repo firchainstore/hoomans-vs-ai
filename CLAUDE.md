@@ -104,6 +104,15 @@ android/                     Proyecto Capacitor generado (se compila en el PC de
   `GameScene` a Three.js reutilizando `src/core` y los JSON sin cambios, y dejar Phaser solo para menús o retirarlo.
   Riesgo a vigilar: rendimiento 3D en gama baja (bajar sombras/bloom, fusionar geometrías, instancing).
 
+- **Qué espera realmente el autor (visto en sus 7 enlaces de X, 2026-11-14):** shooters 3D en PRIMERA o
+  tercera persona hechos con Claude para navegador de escritorio (arma en pantalla, escenarios industriales
+  con luz volumétrica, HUD militar, todo generado por código). No un juego cenital. Cualquier propuesta
+  visual debe medirse contra eso. Tensión a resolver con él: esos juegos son de PC (ratón + teclado, GPU
+  decente); en móvil de gama baja un FPS así no rinde igual y los controles táctiles son más difíciles.
+- **Red del entorno en la nube "Videojuego":** acceso limitado; se permitieron x.com, pbs.twimg.com y
+  Pinterest. WebFetch no los resuelve, pero `curl` sin cabeceras falsas sí (título, descripción y miniatura).
+  No se pueden ver vídeos: pedir capturas.
+
 ## Cosas que NO están verificadas
 - El APK/AAB nunca se ha compilado (no hay Android SDK en el entorno de desarrollo en la nube).
   `MainActivity.java` (pantalla completa) está escrito pero sin compilar.

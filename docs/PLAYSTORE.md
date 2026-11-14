@@ -9,7 +9,7 @@ Las políticas de Google cambian: confirma cada punto en Play Console al momento
       a reclutar pronto: es lo que más retrasa un primer lanzamiento.
 - [ ] Perfil de pagos / cuenta de comerciante para vender compras (confirma disponibilidad y datos fiscales para Panamá).
 - [ ] Decidir el **appId** definitivo (hoy `com.firchain.hoomansvsai`): no se puede cambiar después.
-- [ ] Comprobar que el nombre "Hoomans vs AI" no choca con una marca o un juego existente en Play.
+- [ ] Comprobar que el nombre "Last Hoomans" no choca con una marca o un juego existente en Play.
 
 ## Requisitos técnicos
 - [ ] AAB firmado (`docs/BUILD_ANDROID.md`), con Play App Signing activado.
@@ -58,11 +58,11 @@ Responde con la verdad; lo esperable para este juego:
 - [ ] Correo de contacto público.
 
 ### Textos propuestos (ajústalos; máx. título 30, descripción breve 80, completa 4000 caracteres)
-**ES — Título:** Hoomans vs AI: Shooter Arcade
+**ES — Título:** Últimos Hoomans: Shooter IA
 **ES — Breve:** Shooter de doble stick: destruye robots y salva a la Resistencia. ¡Sin wifi!
 **ES — Completa (borrador):**
 > Las máquinas ganaron. Tú no te has rendido.
-> Hoomans vs AI es un shooter arcade de doble stick con partidas de 2 a 4 minutos. Recorre las
+> Last Hoomans es un shooter arcade de doble stick con partidas de 2 a 4 minutos. Recorre las
 > ruinas de la Bahía, destruye drones, torretas y mechs, y apaga a TUTELA, la inteligencia artificial
 > que decidió "protegernos".
 > • 6 misiones de campaña: sobrevive, escolta el convoy, hackea terminales y derrota jefes.
@@ -74,11 +74,11 @@ Responde con la verdad; lo esperable para este juego:
 Palabras clave ES (úsalas de forma natural, sin listas): shooter, juego de disparos, robots, doble
 stick, arcade, oleadas, sin conexión, sin wifi, apocalipsis, inteligencia artificial, acción, jefes.
 
-**EN — Title:** Hoomans vs AI: Arcade Shooter
+**EN — Title:** Last Hoomans: AI Robot Shooter
 **EN — Short:** Twin-stick shooter: smash robots and save the Resistance. Play offline!
 **EN — Full (draft):**
 > The machines won. You haven't given up.
-> Hoomans vs AI is a twin-stick arcade shooter with 2–4 minute runs. Fight through the ruins of the
+> Last Hoomans is a twin-stick arcade shooter with 2–4 minute runs. Fight through the ruins of the
 > Bay, destroy drones, turrets and mechs, and shut down TUTELA, the AI that decided to "protect" us.
 > • 6 campaign missions: survive, escort the convoy, hack terminals, beat bosses.
 > • Endless Waves mode. • 4 weapons and permanent upgrades. • Offline play.

@@ -24,7 +24,8 @@ export interface UpgradeDef {
   id: string; nameKey: string; stat: 'damageMult' | 'maxHp' | 'speedMult';
   perLevel: number; maxLevel: number; baseCost: number; costGrowth: number;
 }
-export interface SkinDef { id: string; nameKey: string; color: string }
+/** color = mochila; jacket = chaqueta; hair = pelo o gorro; head = 'cap' | 'beanie' | 'bun' | 'hair'. */
+export interface SkinDef { id: string; nameKey: string; color: string; jacket: string; hair: string; head: string }
 export interface ProductDef {
   id: string; type: string; nameKey: string; descKey: string; fakePrice: string;
   grants: { removeAds?: boolean; weapons?: string[]; skins?: string[]; coins?: number };

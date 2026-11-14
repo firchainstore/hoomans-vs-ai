@@ -1,4 +1,18 @@
 [
-  { "id": "default", "nameKey": "skin.default", "color": "0xffb347" },
-  { "id": "ember", "nameKey": "skin.ember", "color": "0xff5e5b" }
+  {
+    "id": "default",
+    "nameKey": "skin.default",
+    "color": "0xb5532a",
+    "jacket": "0x4a6079",
+    "hair": "0x2b2622",
+    "head": "cap"
+  },
+  {
+    "id": "ember",
+    "nameKey": "skin.ember",
+    "color": "0x8a2f3a",
+    "jacket": "0x3f8f8a",
+    "hair": "0x5a3420",
+    "head": "bun"
+  }
 ]

@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Hoomans vs AI</string>
-    <string name="title_activity_main">Hoomans vs AI</string>
+    <string name="app_name">Last Hoomans</string>
+    <string name="title_activity_main">Last Hoomans</string>
     <string name="package_name">com.firchain.hoomansvsai</string>
     <string name="custom_url_scheme">com.firchain.hoomansvsai</string>
 </resources>

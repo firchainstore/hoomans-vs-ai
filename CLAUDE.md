@@ -1,4 +1,4 @@
-# Hoomans vs AI — guía para quien continúe el proyecto
+# Last Hoomans — guía para quien continúe el proyecto
 
 Shooter top-down 2D de doble stick para Android (Google Play). Autor: desarrollador independiente
 (Panamá), primer juego; mercado principal hispanohablante. **Háblale en español y explica las
@@ -84,10 +84,15 @@ android/                     Proyecto Capacitor generado (se compila en el PC de
 
 - **Dirección de arte pedida por el autor (2026-11-14):** los humanos son GENTE COMÚN (oficios normales:
   enfermera, mecánico, maestra, repartidor…) obligada a sobrevivir de un día para otro, no héroes de acción
-  ni soldados. Las máquinas deben dar miedo: industriales, esqueléticas, frías. Mandó dos referencias por
-  enlace que el entorno no pudo abrir; pedirle las imágenes adjuntas antes de rediseñar personajes.
-- **Nombre:** "Humans vs Ai: Battle Simulator" (Abstract Software) ya existe en Google Play y App Store,
-  así que "Humans/Hoomans vs AI" se confunde con él. Nombre definitivo pendiente de que el autor elija.
+  ni soldados. Las máquinas deben dar miedo: industriales, esqueléticas, frías.
+- **Nombre (elegido por el autor):** marca "Last Hoomans" ("hoomans" = forma coloquial de "humans").
+  Títulos de tienda: ES "Últimos Hoomans: Shooter IA", EN "Last Hoomans: AI Robot Shooter" (30 caracteres
+  justos). Quiere "AI/IA" en el título y "robot" porque la gente asocia IA con robots. Se descartó
+  "Humans/Hoomans vs AI" porque ya existe "Humans vs Ai: Battle Simulator" en Play y App Store.
+  El appId sigue siendo `com.firchain.hoomansvsai` (provisional).
+- **Referencias del autor:** máquinas = esqueleto metálico con ojos rojos y mecánica expuesta (se toma la
+  sensación, NO el diseño de la película); humanos = gente con ropa de calle. Los personajes jugables
+  son los "skins" (`skins.json`: chaqueta, pelo/gorro, mochila) con nombre y oficio.
 - **Distribución:** Google Play sigue siendo el objetivo; el mismo build sirve como web (Cloudflare Pages
   gratis alcanza de sobra: el juego pesa ~1,3 MB) para demo y captación. Campaña humana primero.
 

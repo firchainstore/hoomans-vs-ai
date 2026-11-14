@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { ENEMIES, SKINS, hex } from '../core/data';
-import type { EnemyDef } from '../core/types';
+import type { EnemyDef, SkinDef } from '../core/types';
 
 /** Margen alrededor del círculo de colisión dentro de cada textura (deja sitio a brillos y sombras). */
 export const PAD = 10;
@@ -17,6 +17,7 @@ export function rng(seed: number) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+const shade = (n: number, k: number) => (Math.round(((n >> 16) & 255) * k) << 16) | (Math.round(((n >> 8) & 255) * k) << 8) | Math.round((n & 255) * k);
 const rgba = (n: number, a = 1) => `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 
 // ---- utilidades de dibujo (origen en el centro del sprite, mirando a la derecha) ----
@@ -68,7 +69,7 @@ export function buildTextures(scene: Phaser.Scene) {
   const R = rng(7), K = SPRITE_SCALE;
   const { width: W, height: H } = scene.scale;
 
-  for (const s of SKINS) make(`player_${s.id}`, 46, 46, (c) => drawPlayer(c, hex(s.color)), true, K);
+  for (const s of SKINS) make(`player_${s.id}`, 46, 46, (c) => drawPlayer(c, s), true, K);
   for (const e of ENEMIES) { const s = 2 * (e.radius + PAD); make(`enemy_${e.id}`, s, s, (c) => drawEnemy(c, e), true, K); }
 
   make('bullet_p', 26, 10, (c) => { // trazadora blanca (se tiñe con el color del arma)
@@ -158,16 +159,23 @@ export function buildTextures(scene: Phaser.Scene) {
   make('menu_bg', W, H, (c) => drawMenuBg(c, W, H), false);
 }
 
-function drawPlayer(c: C, accent: number) {
+/** Superviviente: una persona corriente con ropa de calle, mochila y un rifle de caza. */
+function drawPlayer(c: C, s: SkinDef) {
+  const jacket = hex(s.jacket), hair = hex(s.hair), pack = hex(s.color), skin = '#c99b7a';
   shadow(c, 13, 12);
-  rr(c, 5, -2, 18, 4, 1.5, '#15151a'); rr(c, 3, -3.5, 10, 7, 2, '#3b3c46'); rr(c, 19, -3, 4, 6, 1, '#0c0c10'); // rifle
-  rr(c, -13, -7, 7, 14, 3, grad(c, -7, 7, '#4a4435', '#262319')); // mochila
-  ell(c, 8, -7, 5.5, 3.2, '#4d4638', 0.55); ell(c, 7, 6.5, 5.5, 3.2, '#3c372c', -0.5); // brazos
-  ell(c, 0, 0, 8.5, 13, grad(c, -13, 13, '#7a705d', '#3a352b')); // abrigo
-  rr(c, -4, -13, 6, 4, 1.5, rgba(accent)); rr(c, -4, 9, 6, 4, 1.5, rgba(accent)); // hombreras de la Resistencia
-  ell(c, 1, 0, 6.5, 6.5, grad(c, -7, 7, '#93876f', '#463f33')); // capucha
-  c.strokeStyle = 'rgba(0,0,0,0.35)'; c.lineWidth = 1; c.beginPath(); c.arc(1, 0, 6, 0, 6.29); c.stroke();
-  rr(c, 4, -4, 2.6, 8, 1.3, rgba(accent)); glow(c, 5, 0, 9, accent, 0.55); // visor
+  rr(c, 2, -2.5, 10, 5, 1.5, '#6b4a2c'); rr(c, 10, -1.4, 13, 2.8, 1, '#1c1c20'); // rifle de caza: culata de madera
+  rr(c, -14, -7, 8, 14, 3, grad(c, -7, 7, rgba(pack), rgba(shade(pack, 0.5)))); // mochila
+  c.strokeStyle = 'rgba(0,0,0,0.4)'; c.lineWidth = 1; c.beginPath(); c.moveTo(-10, -7); c.lineTo(-10, 7); c.stroke();
+  ell(c, 7, -7, 5.5, 3.2, rgba(shade(jacket, 0.9)), 0.55); ell(c, 6, 6.5, 5.5, 3.2, rgba(shade(jacket, 0.7)), -0.5); // mangas
+  ell(c, 11.5, -3.6, 2, 2, skin); ell(c, 9.5, 3, 2, 2, skin); // manos
+  ell(c, 0, 0, 8.5, 13, grad(c, -13, 13, rgba(shade(jacket, 1.15)), rgba(shade(jacket, 0.5)))); // chaqueta
+  c.strokeStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.moveTo(3, -9); c.lineTo(6, 0); c.lineTo(3, 9); c.stroke(); // solapas
+  rr(c, -6, -13, 3, 26, 1.5, rgba(shade(pack, 0.7))); // correas
+  ell(c, 1, 0, 6.3, 6.3, skin);
+  if (s.head === 'cap') { ell(c, 0.5, 0, 6.3, 6.3, rgba(hair)); ell(c, 6.5, 0, 3, 5.2, rgba(shade(hair, 0.6))); }
+  else if (s.head === 'beanie') { ell(c, 0.5, 0, 6.6, 6.6, rgba(hair)); ell(c, -1, 0, 2.2, 2.2, rgba(shade(hair, 1.4))); }
+  else { ell(c, -0.5, 0, 6.3, 6.4, rgba(hair)); ell(c, 4.6, 0, 2.3, 4.2, skin); if (s.head === 'bun') ell(c, -6.5, 0, 3, 3, rgba(shade(hair, 0.8))); }
+  c.strokeStyle = 'rgba(0,0,0,0.3)'; c.beginPath(); c.arc(1, 0, 6.3, 0, 6.29); c.stroke();
 }
 
 function drawEnemy(c: C, e: EnemyDef) {
@@ -183,14 +191,19 @@ function drawEnemy(c: C, e: EnemyDef) {
       ell(c, 0, 0, 7.5, 6, steel('#9aa0b0', '#3a3d49')); eye(c, 4, 0, 2.6, col);
       break;
     }
-    case 'square': { // sintético: humanoide metálico
-      shadow(c, r * 0.9, r);
-      rr(c, 6, 3, 15, 4, 1.5, '#14141a'); glow(c, 21, 5, 6, col, 0.7);
-      ell(c, 8, -8, 5.5, 3.2, '#7d8392', 0.5); ell(c, 7, 6, 5.5, 3.2, '#5e6371', -0.4);
-      ell(c, 0, 0, 8.5, r, steel('#b9bfcd', '#434856'));
-      c.strokeStyle = 'rgba(0,0,0,0.4)'; c.lineWidth = 1; c.beginPath(); c.moveTo(-2, -r + 3); c.lineTo(-2, r - 3); c.stroke();
-      ell(c, 1, 0, 6.2, 6.2, steel('#e3e7ef', '#6a7080')); rr(c, 3, -4.5, 3.5, 9, 1.5, '#15151c');
-      eye(c, 5, -2.4, 1.3, col); eye(c, 5, 2.4, 1.3, col);
+    case 'square': { // sintético: esqueleto de metal desnudo, pistones a la vista
+      shadow(c, r * 0.8, r);
+      rr(c, 6, 3.6, 17, 3.4, 1, '#0f1014'); glow(c, 23, 5.3, 6, col, 0.7); // arma integrada en el antebrazo
+      c.strokeStyle = '#8d93a3'; c.lineWidth = 2.4; c.lineCap = 'round';
+      c.beginPath(); c.moveTo(0, -12); c.lineTo(9, -8); c.moveTo(0, 12); c.lineTo(8, 5.5); c.stroke();
+      c.strokeStyle = '#3a3d48'; c.lineWidth = 1; c.beginPath(); c.moveTo(1, -10.5); c.lineTo(8, -7); c.moveTo(1, 10.5); c.lineTo(7, 5); c.stroke();
+      rr(c, -1.8, -12, 3.6, 24, 1.8, '#23252e'); // columna
+      for (let y = -9; y <= 9; y += 4.5) rr(c, -6.5, y - 1, 12, 2, 1, steel('#c3c8d4', '#5b6070')); // costillas
+      ell(c, 0, -12, 3.6, 3.6, steel('#d5d9e2', '#555a68')); ell(c, 0, 12, 3.6, 3.6, steel('#d5d9e2', '#555a68')); // hombros
+      ell(c, 9, -8, 2, 2, '#30323c'); ell(c, 8, 5.5, 2, 2, '#30323c');
+      ell(c, 2, 0, 5.6, 5, radial(c, 0, -2, 7, [[0, '#f1f3f7'], [1, '#5a5f6d']])); // cráneo
+      rr(c, 4.2, -3.6, 3.2, 7.2, 1, '#1b1c23'); // placa de sensores
+      eye(c, 5.6, -2.1, 1.25, col); eye(c, 5.6, 2.1, 1.25, col);
       break;
     }
     case 'hex': { // torreta
@@ -286,6 +299,19 @@ function drawMenuBg(c: C, W: number, H: number) {
   skyline(H * 0.8, '#130a1a', 40, 210, 2);
   c.fillStyle = '#09060e'; c.fillRect(0, H * 0.8 - 1, W, H * 0.2 + 1);
   for (let i = 0; i < 40; i++) { const x = R() * W, s = 6 + R() * 22; poly(c, [x, H * 0.8, x + s * 0.4, H * 0.8 - s * 0.5, x + s, H * 0.8 - s * 0.2, x + s * 1.3, H * 0.8], '#09060e'); }
+  // Supervivientes: siluetas de gente corriente mirando hacia el ojo
+  const person = (x: number, h: number, kind: number) => {
+    const y = H * 0.8 + 6, w = h * 0.3; c.fillStyle = '#07050b';
+    c.fillRect(x - w * 0.45, y - h * 0.48, w * 0.38, h * 0.48); c.fillRect(x + w * 0.07, y - h * 0.48, w * 0.38, h * 0.48);
+    poly(c, [x - w * 0.6, y - h * 0.44, x - w * 0.5, y - h * 0.82, x + w * 0.5, y - h * 0.82, x + w * 0.6, y - h * 0.44], '#07050b');
+    ell(c, x, y - h * 0.91, h * 0.085, h * 0.09, '#07050b');
+    if (kind === 1) c.fillRect(x - w * 0.9, y - h * 0.8, w * 0.4, h * 0.3); // mochila
+    if (kind === 2) c.fillRect(x - h * 0.1, y - h * 0.99, h * 0.26, h * 0.03); // gorra
+    if (kind === 3) { c.save(); c.translate(x + w * 0.5, y - h * 0.7); c.rotate(-0.5); c.fillRect(0, 0, h * 0.5, h * 0.035); c.restore(); } // rifle al hombro
+    c.strokeStyle = 'rgba(255,140,70,0.55)'; c.lineWidth = 1; c.beginPath(); c.moveTo(x + w * 0.52, y - h * 0.8); c.lineTo(x + w * 0.62, y - h * 0.45); c.stroke();
+    c.beginPath(); c.arc(x, y - h * 0.91, h * 0.09, -1.2, 0.9); c.stroke();
+  };
+  [[0.05, 62, 1], [0.085, 54, 0], [0.12, 66, 3], [0.16, 50, 2], [0.19, 58, 1]].forEach(([fx, h, k]) => person(W * fx, h, k));
   for (let i = 0; i < 90; i++) glow(c, R() * W, R() * H * 0.85, 1.5 + R() * 3, R() < 0.8 ? 0xff8a3d : 0xffd9a0, 0.5 + R() * 0.5); // brasas
   for (let y = 0; y < H; y += 3) { c.fillStyle = 'rgba(0,0,0,0.07)'; c.fillRect(0, y, W, 1); }
 }

@@ -1,4 +1,4 @@
-# GDD — Hoomans vs AI (v1)
+# GDD — Last Hoomans (v1)
 
 ## Visión
 Shooter cenital de doble stick, partidas de 2–4 minutos, para móvil en horizontal. La humanidad

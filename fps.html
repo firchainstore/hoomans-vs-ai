@@ -27,6 +27,8 @@
     #wp { left: 0; top: 0; display: none; text-align: center; font-size: 12px; color: #35e0ff; width: 80px; margin: -14px 0 0 -40px; }
     #wp i { display: block; width: 14px; height: 14px; margin: 0 auto 4px; border: 2px solid #35e0ff; transform: rotate(45deg); box-shadow: 0 0 8px #35e0ff; }
     #pauseBtn { position: fixed; right: 16px; top: 44px; width: 44px; height: 40px; background: rgba(10,14,22,.6); border: 1px solid rgba(255,255,255,.4); color: #fff; font: inherit; font-size: 16px; display: none; }
+    #crouchBtn { position: fixed; right: 20px; bottom: 96px; width: 58px; height: 58px; border-radius: 50%; background: rgba(10,14,22,.55); border: 2px solid rgba(255,255,255,.4); color: #fff; font-size: 22px; display: none; }
+    #crouchBtn.on { background: #ffb347; color: #14100a; border-color: #ffb347; }
     .stick { position: fixed; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); background: rgba(255,255,255,.06); pointer-events: none; display: none; }
     .stick i { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: rgba(255,255,255,.5); }
     #screen { position: fixed; inset: 0; display: flex; flex-direction: column; justify-content: center; padding: 20px 7vw; overflow-y: auto; touch-action: pan-y;
@@ -55,7 +57,7 @@
     <div class="hud" id="ammo"><b id="mag">30</b><span id="wname"></span></div>
     <div class="hud" id="coins"></div><div class="hud" id="note"></div>
     <canvas class="hud" id="radar" width="120" height="120"></canvas><div class="hud" id="arrow"></div><div class="hud" id="wp"><i></i><span></span></div>
-    <button id="pauseBtn">II</button>
+    <button id="pauseBtn">II</button><button id="crouchBtn">▼</button>
   </div>
   <div class="stick" id="sl"><i></i></div>
   <div id="screen"></div>

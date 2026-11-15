@@ -110,11 +110,15 @@ android/                     Proyecto Capacitor generado (se compila en el PC de
   (`U` en main.ts); alcances ×1,6. `weapons.json` tiene `mag` (balas por cargador, solo FPS).
   Controles: WASD o flechas + ratón (clic dispara, R recarga, Esc/P pausa); táctil: stick izquierdo,
   arrastre derecho para mirar, disparo automático al apuntar a una máquina.
+  Escenarios: `arena.theme` en `missions.json` (street, scrapyard, bridge, campus, ruins, core) elige borde,
+  coberturas y niebla en la tabla `THEMES` de `level.ts`. Las máquinas llegan por UNA «puerta» (lado de la zona)
+  marcada con haz rojo, que rota cada `fps.gateSeconds`; el autor rechazó que aparecieran por la espalda.
+  Agacharse (C/Ctrl/Shift o botón ▼): baja la cámara y los disparos enemigos chocan con coberturas de ≥1 m.
   Dificultad FPS: bloque `fps` de `balance.json` (cantidad, velocidad, daño, vida que se regenera, radio de
   impacto). El autor encontró la primera versión demasiado difícil (enjambres de drones): no subirla sin que la pruebe.
   Pruebas: `npm run smoke:fps` (arranca todo) y `npm run smoke:fps -- --full` (un bot gana las 6 misiones).
   El juego 2D de Phaser (`index.html`, `src/scenes`, `src/game`) queda congelado; no invertir más en él.
-  Pendiente visible: tienda de compras en la versión FPS, pistas del tutorial, escenarios más distintos por misión.
+  Pendiente visible: tienda de compras en la versión FPS, pistas del tutorial, pulir cada escenario.
 - Monetización web (conversado, sin decidir): Cloudflare no cobra; opciones = portales con reparto de
   anuncios (CrazyGames/Poki/itch.io), Whop (única pasarela del autor) con clave verificada por un Worker,
   o web gratis como escaparate hacia Play. Recomendado empezar por escaparate gratis.

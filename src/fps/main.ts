@@ -20,8 +20,8 @@ const F = BALANCE.fps; // dificultad de la versión en primera persona (balance.
 setLang(saves.data.settings.lang); audio.setOn(saves.data.settings.sound);
 
 interface Enemy { def: EnemyDef; rig: Rig; hp: number; maxHp: number; x: number; z: number; alive: boolean; cds: number[]; dashCd: number; dashT: number; vx: number; vz: number; summonCd: number; touchCd: number; phase: number; toConvoy: boolean; retreat: number }
-const P = { x: 0, z: 0, yaw: 0, pitch: 0, hp: 100, maxHp: 100, speed: 5.4, mag: 30, fireCd: 0, reload: 0, recoil: 0, bob: 0, stepT: 0, lastHurt: 0 };
-const G = { id: 'endless', mission: undefined as MissionDef | undefined, arena: BALANCE.endless.arena as { w: number; h: number; tint: string }, director: null as Director | null,
+const P = { x: 0, z: 0, yaw: 0, pitch: 0, hp: 100, maxHp: 100, speed: 5.4, mag: 30, fireCd: 0, reload: 0, recoil: 0, bob: 0, stepT: 0, lastHurt: 0, crouch: 0 };
+const G = { id: 'endless', mission: undefined as MissionDef | undefined, arena: BALANCE.endless.arena as { w: number; h: number; tint: string; theme?: string }, director: null as Director | null,
   playing: false, paused: false, ended: false, continued: false, coins: 0, dmgMult: 1, weapon: weaponDef('blaster') as WeaponDef, bot: false, speed: 1, lastCoins: 0 };
 const enemies: Enemy[] = [];
 let boss: Enemy | undefined, shake = 0, noteT = 0, time = 0, hudT = 0;
@@ -50,7 +50,7 @@ const toW = (p: { x: number; y: number }) => ({ x: (p.x - G.arena.w / 2) * U, z:
 function clearWorld() {
   for (const e of enemies) scene.remove(e.rig.root); enemies.length = 0; boss = undefined;
   for (const d of debris) scene.remove(d.m); debris.length = 0;
-  for (const b of bolts) b.m.visible = false; convoy = undefined; terminals = [];
+  for (const b of bolts) b.m.visible = false; convoy = undefined; terminals = []; gateBeam.visible = false; lastWave = 0;
 }
 function start(id: string) {
   clearWorld();
@@ -59,28 +59,42 @@ function start(id: string) {
   for (const sp of G.mission?.spawns ?? []) if (typeof sp.where === 'object') keep.push({ ...toW(sp.where), r: 3.5 });
   if (o?.type === 'hack') for (const p of o.terminals) keep.push({ ...toW(p), r: o.radius * U + 2 });
   if (o?.type === 'defend') { const a = toW(o.convoy.from), b = toW(o.convoy.to); for (let k = 0; k <= 1; k += 0.03) keep.push({ x: a.x + (b.x - a.x) * k, z: a.z + (b.z - a.z) * k, r: 4 }); }
-  buildLevel(G.arena.w, G.arena.h, id, hex(G.arena.tint), keep);
+  buildLevel(G.arena.w, G.arena.h, id, hex(G.arena.tint), keep, G.arena.theme);
+  gate = -1; gateT = 0;
   if (o?.type === 'hack') terminals = o.terminals.map((p) => { const w = toW(p), tm = makeTerminal(L.group, o.radius * U); tm.g.position.set(w.x, 0, w.z); return { ...w, r: o.radius * U, finished: false, done: tm.done }; });
   if (o?.type === 'defend') { const a = toW(o.convoy.from), b = toW(o.convoy.to); convoy = { g: makeConvoy(L.group), x: a.x, z: a.z, hp: o.convoy.hp, max: o.convoy.hp, t: 0, fx: a.x, fz: a.z, tx: b.x, tz: b.z, speed: o.convoy.speed * U }; convoy.g.rotation.y = Math.atan2(-(b.z - a.z), b.x - a.x); }
   G.director = G.mission ? new MissionDirector(G.mission) : new EndlessDirector(ENEMIES, BALANCE.endless);
   const stats = playerStats(s, UPGRADES, BALANCE.player);
   G.weapon = weaponDef(s.equipped); G.dmgMult = stats.damageMult; G.coins = 0; G.ended = G.continued = G.paused = false;
   Object.assign(P, { x: st.x, z: st.z, yaw: convoy ? -Math.PI / 2 : 0, pitch: 0, hp: stats.maxHp, maxHp: stats.maxHp, speed: 5.4 * (stats.speed / BALANCE.player.speed), mag: G.weapon.mag ?? 30, fireCd: 0, reload: 0, recoil: 0, lastHurt: -99 });
-  $('wname').textContent = t(G.weapon.nameKey); $('hudAll').style.display = 'block'; $('pauseBtn').style.display = TOUCH ? 'block' : 'none';
+  $('wname').textContent = t(G.weapon.nameKey); $('hudAll').style.display = 'block'; $('pauseBtn').style.display = $('crouchBtn').style.display = TOUCH ? 'block' : 'none';
   show(null); G.playing = true; lock(); audio.unlock(); audio.alarm();
   note(G.mission ? `${t(G.mission.nameKey)} — ${t(G.mission.briefKey)}` : t('menu.endless'), 5);
 }
+// Las máquinas llegan por UN lado de la zona (la "puerta"), marcado con un haz rojo; cambia cada cierto tiempo.
+let gate = -1, gateT = 0;
+const gateBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 2, 240, 12, 1, true), beamMat); gateBeam.visible = false; scene.add(gateBeam);
+const GATES: [number, number][] = [[0, -1], [1, 0], [0, 1], [-1, 0]]; // norte, este, sur, oeste
+function nextGate() {
+  const long = L.hw > L.hd * 2.2, opts = long ? [0, 2] : [0, 1, 2, 3]; let g = gate; while (g === gate && opts.length > 1) g = opts[Math.floor(Math.random() * opts.length)];
+  gate = g < 0 ? opts[0] : g; gateT = F.gateSeconds; note(t(`fps.gate${gate}`), 3.5); audio.alarm();
+}
 function spawnPoint(where: SpawnRequest['where']) {
   if (typeof where === 'object') return toW(where);
-  const a = where === 'objective' && convoy ? convoy : P, fx = -Math.sin(P.yaw), fz = -Math.cos(P.yaw), p = { x: 0, z: 0 };
-  for (let i = 0; i < 10; i++) { // lejos del jugador y, si se puede, fuera de su vista
-    const ang = rnd(0, 6.283), r = rnd(19, 26); p.x = THREE.MathUtils.clamp(a.x + Math.cos(ang) * r, -L.hw + 2, L.hw - 2); p.z = THREE.MathUtils.clamp(a.z + Math.sin(ang) * r, -L.hd + 2, L.hd - 2);
-    const dx = p.x - P.x, dz = p.z - P.z, d = Math.hypot(dx, dz); if (d > 12 && (i > 5 || (dx * fx + dz * fz) / d < 0.5)) break;
+  if (gate < 0) nextGate();
+  const a = where === 'objective' && convoy ? convoy : P, [gx, gz] = GATES[gate], p = { x: 0, z: 0 };
+  for (let i = 0; i < 8; i++) { // sobre el borde de esa puerta, cerca del jugador pero nunca encima
+    p.x = gx ? gx * (L.hw - 2) : THREE.MathUtils.clamp(a.x + rnd(-11, 11), -L.hw + 2, L.hw - 2); p.z = gz ? gz * (L.hd - 2) : THREE.MathUtils.clamp(a.z + rnd(-9, 9), -L.hd + 2, L.hd - 2);
+    if (gx && Math.abs(p.x - a.x) > 34) p.x = a.x + gx * 34; if (gz && Math.abs(p.z - a.z) > 34) p.z = a.z + gz * 34;
+    if (Math.hypot(p.x - P.x, p.z - P.z) > 13) break; p.x += gx ? 0 : (p.x > P.x ? 9 : -9); p.z += gz ? 0 : (p.z > P.z ? 9 : -9);
   }
+  gateBeam.position.set(gx ? gx * (L.hw + 1) : a.x, 118, gz ? gz * (L.hd + 1) : a.z); gateBeam.visible = true;
   return p;
 }
+let lastWave = 0;
 function spawn(req: SpawnRequest) {
-  const def = enemyDef(req.enemy);
+  const def = enemyDef(req.enemy), dd = G.director;
+  if (dd instanceof EndlessDirector && dd.wave !== lastWave) { lastWave = dd.wave; nextGate(); }
   const n = def.boss || typeof req.where === 'object' ? req.count : Math.max(1, Math.round(req.count * F.countScale)); // menos máquinas a la vez que en el 2D
   for (let i = 0; i < n; i++) {
     if (!def.boss && enemies.filter((e) => e.alive).length >= F.maxAlive) return;
@@ -164,7 +178,7 @@ function tickEnemy(e: Enemy, dt: number) {
     collide(e, r.r);
   }
   if (def.contactDamage && d < contact + 0.35 && e.touchCd <= 0) { e.touchCd = F.touchCooldown; if (r.kind === 'drone') e.retreat = F.droneRetreat; if (toC) hurtConvoy(def.contactDamage); else hurt(def.contactDamage); }
-  if (def.attacks) { for (let i = 0; i < e.cds.length; i++) e.cds[i] -= dt * rage; if (d <= range * 1.15) shoot(e, tgt, d, toC ? 1.6 : 1.3); }
+  if (def.attacks) { for (let i = 0; i < e.cds.length; i++) e.cds[i] -= dt * rage; if (d <= range * 1.15) shoot(e, tgt, d, toC ? 1.6 : 1.3 - 0.6 * P.crouch); }
   if (def.summon && (e.summonCd -= dt * rage) <= 0) { e.summonCd = def.summon.cooldown; for (let i = 0; i < def.summon.count; i++) { const a = rnd(0, 6.28), w = { x: (e.x + Math.cos(a) * 4) / U + G.arena.w / 2, y: (e.z + Math.sin(a) * 4) / U + G.arena.h / 2 }; spawn({ enemy: def.summon.enemy, count: 1, where: w }); } }
   // animación
   const face = Math.atan2(dx, dz), ph = time * 6 + e.phase, sw = moving ? Math.sin(ph) : 0;
@@ -184,7 +198,7 @@ function tickEnemy(e: Enemy, dt: number) {
 // ---------- Fin de partida ----------
 function lock() { if (!TOUCH && !G.bot) { try { void (renderer.domElement.requestPointerLock() as unknown as Promise<void>)?.catch?.(() => undefined); } catch { /* sin bloqueo: se mira arrastrando */ } } }
 function end(won: boolean) {
-  G.ended = true; G.playing = false; document.exitPointerLock?.(); if (won) audio.win(); else audio.lose();
+  G.ended = true; G.playing = false; $('wp').style.display = $('arrow').style.display = 'none'; document.exitPointerLock?.(); if (won) audio.win(); else audio.lose();
   setTimeout(() => { if (!won && P.hp <= 0 && !G.continued && ads.isRewardedReady()) continuePrompt(saves.data.purchases.removeAds); else summary(won); }, G.bot ? 0 : 1100);
 }
 async function reward(place: 'continue' | 'double_coins') { return saves.data.purchases.removeAds || ads.showRewarded(place); }
@@ -210,8 +224,9 @@ on('double', async () => { const b = document.querySelector('[data-a="double"]')
 function pause() { if (!G.playing) return; G.playing = false; G.paused = true; document.exitPointerLock?.(); pauseMenu(); }
 
 // ---------- Controles: WASD o flechas + ratón; táctil: stick izquierdo y arrastre derecho ----------
-const keys = new Set<string>(); const move = { x: 0, z: 0 }; let mouseFire = false, locked = false;
-addEventListener('keydown', (e) => { const k = e.key.toLowerCase(); keys.add(k); if (k.startsWith('arrow') || k === ' ') e.preventDefault(); if (k === 'r') startReload(); if (k === 'escape' || k === 'p') pause(); });
+const keys = new Set<string>(); const move = { x: 0, z: 0 }; let mouseFire = false, locked = false, crouchBtn = false;
+const eyeY = () => 1.65 - 0.7 * P.crouch;
+addEventListener('keydown', (e) => { const k = e.key.toLowerCase(); keys.add(k); if (k.startsWith('arrow') || k === ' ' || k === 'control') e.preventDefault(); if (k === 'r') startReload(); if (k === 'escape' || k === 'p') pause(); });
 addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
 addEventListener('blur', () => { keys.clear(); pause(); });
 const cv = renderer.domElement;
@@ -232,6 +247,7 @@ addEventListener('pointermove', (e) => {
 });
 const up = (e: PointerEvent) => { if (e.pointerType === 'mouse') mouseFire = false; if (stick && e.pointerId === stick.id) { stick = null; move.x = move.z = 0; $('sl').style.display = 'none'; ($('sl').firstElementChild as HTMLElement).style.transform = ''; } lookIds.delete(e.pointerId); };
 addEventListener('pointerup', up); addEventListener('pointercancel', up); $('pauseBtn').addEventListener('click', pause);
+$('crouchBtn').addEventListener('click', () => { crouchBtn = !crouchBtn; $('crouchBtn').classList.toggle('on', crouchBtn); });
 
 // ---------- HUD ----------
 const radar = ($('radar') as HTMLCanvasElement).getContext('2d')!;
@@ -284,15 +300,17 @@ function step(dt: number) {
       const mx = move.x + (+(keys.has('d') || keys.has('arrowright')) - +(keys.has('a') || keys.has('arrowleft'))), mz = move.z + (+(keys.has('s') || keys.has('arrowdown')) - +(keys.has('w') || keys.has('arrowup')));
       const s = Math.sin(P.yaw), c = Math.cos(P.yaw); wx = mx * c + mz * s; wz = mz * c - mx * s;
     }
+    const down = crouchBtn || keys.has('c') || keys.has('control') || keys.has('shift'); P.crouch = THREE.MathUtils.clamp(P.crouch + (down ? 1 : -1) * dt * 7, 0, 1);
     const ml = Math.hypot(wx, wz);
-    if (ml > 0.1) { const k = P.speed / Math.max(ml, 1); P.x += wx * k * dt; P.z += wz * k * dt; speed = Math.min(ml, 1); if ((P.stepT -= dt * speed) <= 0) { P.stepT = 0.42; audio.step(); } }
+    if (ml > 0.1) { const k = (P.speed * (1 - 0.5 * P.crouch)) / Math.max(ml, 1); P.x += wx * k * dt; P.z += wz * k * dt; speed = Math.min(ml, 1); if ((P.stepT -= dt * speed) <= 0) { P.stepT = 0.42; audio.step(); } }
     collide(P, 0.6);
     if (P.hp < P.maxHp && time - P.lastHurt > F.regenDelay) P.hp = Math.min(P.maxHp, P.hp + F.regenPerSecond * dt); // la vida se recupera si te cubres
-    camera.position.set(P.x, 1.65, P.z); camera.rotation.set(P.pitch, P.yaw, 0); camera.updateMatrixWorld();
+    camera.position.set(P.x, eyeY(), P.z); camera.rotation.set(P.pitch, P.yaw, 0); camera.updateMatrixWorld();
     const aim = trace(eyeP.copy(camera.position), aimDir(), Math.max(G.weapon.range * U * 2.5, 18));
     const firing = (locked && mouseFire) || ((TOUCH || G.bot || !locked) && !!aim.e); P.fireCd -= dt;
     if (P.reload > 0) { if ((P.reload -= dt) <= 0) P.mag = G.weapon.mag ?? 30; } else if (firing && P.fireCd <= 0) fire();
     const d = G.director!;
+    if (gate >= 0 && (gateT -= dt) <= 0 && !(d instanceof EndlessDirector)) nextGate();
     for (const req of d.update(dt, enemies.filter((e) => e.alive).length)) spawn(req);
     for (const e of enemies) if (e.alive) tickEnemy(e, dt);
     if (convoy && d instanceof MissionDirector) {
@@ -308,7 +326,7 @@ function step(dt: number) {
   } else if (!G.paused) P.yaw += dt * 0.04; // cámara lenta en menús
   P.bob += dt * speed * 9; P.recoil = Math.max(0, P.recoil - dt * 9); shake = Math.max(0, shake - dt);
   const dead = G.ended && P.hp <= 0;
-  camera.position.set(P.x + rnd(-1, 1) * shake * 0.12, 1.65 + Math.sin(P.bob * 2) * 0.035 * speed - (dead ? 1.2 : 0), P.z + rnd(-1, 1) * shake * 0.12);
+  camera.position.set(P.x + rnd(-1, 1) * shake * 0.12, eyeY() + Math.sin(P.bob * 2) * 0.035 * speed - (dead ? 1.2 : 0), P.z + rnd(-1, 1) * shake * 0.12);
   camera.rotation.set(P.pitch + P.recoil * 0.012, P.yaw, dead ? 0.6 : 0);
   const rl = P.reload > 0 ? Math.sin((P.reload / 1.5) * Math.PI) : 0;
   view.position.set(0.17 + Math.cos(P.bob) * 0.012 * speed, -0.16 + Math.abs(Math.sin(P.bob)) * 0.014 * speed - rl * 0.28, -0.27 + P.recoil * 0.05); view.rotation.set(P.recoil * 0.06 - rl * 0.7, 0.02, 0);
@@ -318,7 +336,7 @@ function step(dt: number) {
   for (const b of bolts) if (b.m.visible) {
     b.m.position.addScaledVector(b.v, dt); const p = b.m.position;
     if ((b.life -= dt) <= 0 || Math.abs(p.x) > L.hw + 2 || Math.abs(p.z) > L.hd + 2) b.m.visible = false;
-    else if (G.playing && Math.hypot(p.x - P.x, p.z - P.z) < 0.5 && p.y > 0.3 && p.y < 1.9) { b.m.visible = false; hurt(b.dmg); }
+    else if (G.playing && Math.hypot(p.x - P.x, p.z - P.z) < 0.5 && p.y > 0.2 && p.y < 1.9 - 0.7 * P.crouch) { b.m.visible = false; hurt(b.dmg); }
     else if (convoy && convoy.hp > 0 && Math.abs(p.x - convoy.x) < 4 && Math.abs(p.z - convoy.z) < 1.6 && p.y < 3) { b.m.visible = false; hurtConvoy(b.dmg); }
     else for (const c of L.colliders) if (Math.abs(p.x - c.x) < c.hw && Math.abs(p.z - c.z) < c.hd && p.y < c.h) { b.m.visible = false; burst(p.x, p.y, p.z, 5, 2); break; }
   }

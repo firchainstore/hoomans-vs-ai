@@ -41,7 +41,8 @@ export type ObjectiveDef =
   | { type: 'defend'; convoy: { hp: number; speed: number; from: Vec2; to: Vec2 } }
   | { type: 'hack'; secondsEach: number; radius: number; terminals: Vec2[] }
   | { type: 'boss'; enemy: string };
-export interface ArenaDef { w: number; h: number; tint: string }
+/** theme = aspecto del escenario 3D: street | scrapyard | bridge | campus | ruins | core. */
+export interface ArenaDef { w: number; h: number; tint: string; theme?: string }
 export interface MissionDef {
   id: string; campaign: string; nameKey: string; briefKey: string; reward: number;
   arena: ArenaDef; playerStart?: Vec2; objective: ObjectiveDef;

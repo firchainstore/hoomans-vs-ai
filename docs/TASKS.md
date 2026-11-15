@@ -34,7 +34,8 @@ Leyenda de complejidad: **[ALTA]** = requiere el modelo más capaz y/o pruebas e
 - [ ] **[TÚ]** Jugar las 6 misiones y anotar dificultad, velocidad y puntería (el equilibrio viene del 2D y solo lo validó un bot invulnerable).
 - [ ] **[ALTA]** Ajuste de equilibrio para primera persona (vida de jefes, daño, cantidad de máquinas).
 - [ ] **[ALTA]** Rendimiento en móvil: niveles de calidad (sombras, bloom, resolución); medir en teléfono real.
-- [ ] **[ALTA]** Escenarios con identidad por misión (desguace con montañas de chatarra, puente con cables y agua, campus, sala del núcleo). Hoy todos son la misma ciudad con distinto tamaño, semilla y tono.
+- [x] Escenario propio por misión (calle, desguace con grúa, puente colgante, campus, ruinas, cámara del núcleo), agacharse tras coberturas y llegada de máquinas por un solo lado.
+- [ ] **[ECON]** Pulir cada escenario (más piezas únicas: cartel de Nimbora en el campus, tramo roto del puente, cables en la cámara del núcleo).
 - [ ] **[ECON]** Pistas del tutorial en la misión 1 (las claves `hint.*` hablan de sticks: reescribir para PC/táctil).
 - [ ] **[ECON]** Arma distinta en pantalla por cada arma (hoy todas muestran el rifle) y perforación de la Lanza de Riel.
 - [ ] **[ECON]** Tienda (compras) y selector de personaje en los menús FPS; botón de recarga táctil.

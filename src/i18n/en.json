@@ -95,10 +95,14 @@
   "result.endless_over": "GAME OVER",
   "result.endless_stats": "Wave {n}  ·  {s} points",
   "result.record": "New record!",
-  "fps.help_pc": "WASD move · Mouse aim · Click fire · R reload",
-  "fps.help_touch": "Left thumb: move · Right thumb: look · Fires automatically when aiming at a machine",
+  "fps.help_pc": "WASD or arrows: move · Mouse: aim · Click: fire · R: reload · C: crouch behind cover",
+  "fps.help_touch": "Left thumb: move · Right thumb: look · Fires when aiming · ▼ button: crouch",
   "fps.reload": "RELOADING",
   "fps.hacking": "HACKING {p}%",
   "fps.go": "GO TO THE TERMINAL",
-  "fps.headshot": "HEADSHOT!"
+  "fps.headshot": "HEADSHOT!",
+  "fps.gate0": "COMING FROM THE NORTH",
+  "fps.gate1": "COMING FROM THE EAST",
+  "fps.gate2": "COMING FROM THE SOUTH",
+  "fps.gate3": "COMING FROM THE WEST"
 }

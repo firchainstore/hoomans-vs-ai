@@ -23,7 +23,7 @@
   },
   "fps": {
     "_nota": "Ajustes solo de la versión en primera persona. Subir/bajar aquí cambia la dificultad sin tocar código.",
-    "maxAlive": 10,
+    "maxAlive": 8,
     "countScale": 0.55,
     "enemySpeed": 0.8,
     "droneSpeed": 0.55,
@@ -32,6 +32,7 @@
     "droneRetreat": 1.4,
     "hitRadius": 1.35,
     "regenDelay": 4,
-    "regenPerSecond": 7
+    "regenPerSecond": 7,
+    "gateSeconds": 28
   }
 }

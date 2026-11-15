@@ -95,10 +95,14 @@
   "result.endless_over": "FIN DE LA PARTIDA",
   "result.endless_stats": "Oleada {n}  ·  {s} puntos",
   "result.record": "¡Nuevo récord!",
-  "fps.help_pc": "WASD moverte · Ratón apuntar · Clic disparar · R recargar",
-  "fps.help_touch": "Pulgar izquierdo: moverte · Pulgar derecho: mirar · Dispara solo al apuntar a una máquina",
+  "fps.help_pc": "WASD o flechas: moverte · Ratón: apuntar · Clic: disparar · R: recargar · C: agacharte tras una cobertura",
+  "fps.help_touch": "Pulgar izquierdo: moverte · Pulgar derecho: mirar · Dispara solo al apuntar · Botón ▼: agacharte",
   "fps.reload": "RECARGANDO",
   "fps.hacking": "HACKEANDO {p}%",
   "fps.go": "VE AL TERMINAL",
-  "fps.headshot": "¡A LA CABEZA!"
+  "fps.headshot": "¡A LA CABEZA!",
+  "fps.gate0": "VIENEN POR EL NORTE",
+  "fps.gate1": "VIENEN POR EL ESTE",
+  "fps.gate2": "VIENEN POR EL SUR",
+  "fps.gate3": "VIENEN POR EL OESTE"
 }

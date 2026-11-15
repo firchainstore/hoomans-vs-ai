@@ -95,7 +95,7 @@
   "result.endless_over": "FIN DE LA PARTIDA",
   "result.endless_stats": "Oleada {n}  ·  {s} puntos",
   "result.record": "¡Nuevo récord!",
-  "fps.sub": "Las máquinas ya vienen por la calle.",
+  "fps.sub": "Aguanta el cruce. Las máquinas llegan por la calle marcada con la luz roja; el radar y la flecha te dicen dónde están.",
   "fps.deploy": "ENTRAR",
   "fps.help_pc": "WASD moverte · Ratón apuntar · Clic disparar · R recargar",
   "fps.help_touch": "Pulgar izquierdo: moverte · Pulgar derecho: mirar · Dispara solo al apuntar a una máquina",
@@ -105,5 +105,8 @@
   "fps.reload": "RECARGANDO",
   "fps.dead": "HAS CAÍDO",
   "fps.retry": "REINTENTAR",
-  "fps.incoming": "SE ACERCAN"
+  "fps.dir0": "VIENEN POR EL NORTE",
+  "fps.dir1": "VIENEN POR EL ESTE",
+  "fps.dir2": "VIENEN POR EL SUR",
+  "fps.dir3": "VIENEN POR EL OESTE"
 }

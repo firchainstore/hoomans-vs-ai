@@ -6,6 +6,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import cfg from '../config/game.config.json';
 import { setLang, t } from '../i18n/i18n';
 
@@ -128,41 +129,75 @@ const embers = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMate
 const emberPos = new Float32Array(300 * 3); for (let i = 0; i < emberPos.length; i += 3) { emberPos[i] = rnd(-30, 30); emberPos[i + 1] = rnd(0, 10); emberPos[i + 2] = rnd(-30, 30); }
 embers.geometry.setAttribute('position', new THREE.BufferAttribute(emberPos, 3)); embers.frustumCulled = false; scene.add(embers);
 
-// ---------- Máquinas: esqueletos de metal ----------
-const chrome = new THREE.MeshStandardMaterial({ color: 0x8f98a8, metalness: 1, roughness: 0.28 });
-const gunM = new THREE.MeshStandardMaterial({ color: 0x24272e, metalness: 0.9, roughness: 0.45 });
+// ---------- Máquinas: endoesqueletos de combate ----------
+// Cada máquina son 11 segmentos rígidos; las piezas de cada segmento se FUSIONAN por material al arrancar
+// (2 mallas por segmento), así el detalle no multiplica las llamadas de dibujo.
+const chrome = new THREE.MeshStandardMaterial({ color: 0x7a8292, metalness: 1, roughness: 0.3 });
+const gunM = new THREE.MeshStandardMaterial({ color: 0x1b1e24, metalness: 0.85, roughness: 0.5 });
 const eyeMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff2412).multiplyScalar(5) });
-const G = {
-  bone: new THREE.CylinderGeometry(0.05, 0.038, 0.5, 8), arm: new THREE.CylinderGeometry(0.042, 0.034, 0.38, 8), piston: new THREE.CylinderGeometry(0.018, 0.018, 0.5, 6),
-  joint: new THREE.SphereGeometry(0.07, 12, 10), rib: new THREE.TorusGeometry(0.2, 0.024, 6, 20, Math.PI * 1.5), spine: new THREE.CylinderGeometry(0.05, 0.06, 0.74, 8),
-  skull: new THREE.SphereGeometry(0.17, 20, 16), eye: new THREE.SphereGeometry(0.03, 10, 10), socket: new THREE.SphereGeometry(0.058, 10, 10), tooth: new THREE.BoxGeometry(0.022, 0.04, 0.02),
-};
-interface Bot { root: THREE.Group; legL: THREE.Object3D; legR: THREE.Object3D; armL: THREE.Object3D; armR: THREE.Object3D; hp: number; phase: number; alive: boolean; gunner: boolean; cd: number; x: number; z: number }
-function limb(parent: THREE.Object3D, geo: THREE.BufferGeometry, mat: THREE.Material, x: number, y: number, len: number) {
-  const pivot = new THREE.Group(); pivot.position.set(x, y, 0);
-  const add = (g: THREE.BufferGeometry, m: THREE.Material, px: number, py: number, pz: number) => { const o = new THREE.Mesh(g, m); o.position.set(px, py, pz); o.castShadow = true; pivot.add(o); return o; };
-  add(geo, mat, 0, -len / 2, 0); add(G.piston, gunM, 0, -len / 2, -0.05).scale.y = len / 0.5; add(G.joint, gunM, 0, -len, 0); add(geo, mat, 0, -len * 1.5, 0);
-  parent.add(pivot); return pivot;
+const MATS = [chrome, gunM];
+type V3 = [number, number, number];
+type Part = [THREE.BufferGeometry, number, V3, V3?, V3?]; // geometría, material (0 cromo, 1 oscuro), posición, rotación, escala
+const bx = (w: number, h: number, d: number) => new THREE.BoxGeometry(w, h, d), cy = (a: number, b: number, h: number, n = 10) => new THREE.CylinderGeometry(a, b, h, n);
+const sp = (r: number) => new THREE.SphereGeometry(r, 16, 12), cp = (r: number, l: number) => new THREE.CapsuleGeometry(r, l, 4, 10), to = (R: number, r: number, arc = 6.2832) => new THREE.TorusGeometry(R, r, 6, 20, arc);
+const mtx = new THREE.Matrix4(), eul = new THREE.Euler(), qt = new THREE.Quaternion(), v1 = new THREE.Vector3(), v2 = new THREE.Vector3();
+function segment(parts: Part[]) {
+  const by: THREE.BufferGeometry[][] = [[], []];
+  for (const [g, m, p, r = [0, 0, 0] as V3, sc = [1, 1, 1] as V3] of parts) { mtx.compose(v1.set(p[0], p[1], p[2]), qt.setFromEuler(eul.set(r[0], r[1], r[2])), v2.set(sc[0], sc[1], sc[2])); by[m].push(g.applyMatrix4(mtx)); }
+  return by.map((list) => (list.length ? mergeGeometries(list) : null));
 }
+const H = Math.PI / 2;
+const SEG = {
+  pelvis: segment([[bx(0.34, 0.14, 0.2), 1, [0, 0, 0]], [sp(0.085), 0, [-0.16, -0.03, 0]], [sp(0.085), 0, [0.16, -0.03, 0]], [bx(0.16, 0.16, 0.06), 0, [0, -0.04, 0.1], [0.2, 0, 0]], [cy(0.07, 0.09, 0.1), 1, [0, 0.1, 0]]]),
+  torso: segment([
+    [cy(0.03, 0.03, 0.62), 0, [0, 0.31, -0.03]], ...[0, 1, 2, 3, 4, 5].map((i): Part => [cy(0.062, 0.062, 0.05), 1, [0, 0.06 + i * 0.1, -0.03]]), // columna con vértebras
+    ...[0, 1, 2, 3, 4].map((i): Part => [to(0.19, 0.022, Math.PI * 1.5), 0, [0, 0.2 + i * 0.1, 0], [H, 0, Math.PI * 0.75], [0.92 + (i > 1 ? 0.16 : 0), 0.78, 1]]), // costillas
+    [bx(0.21, 0.2, 0.06), 0, [-0.115, 0.56, 0.16], [-0.18, 0.28, 0]], [bx(0.21, 0.2, 0.06), 0, [0.115, 0.56, 0.16], [-0.18, -0.28, 0]], [bx(0.07, 0.42, 0.05), 1, [0, 0.42, 0.17]], // pectorales y esternón
+    [bx(0.66, 0.1, 0.17), 1, [0, 0.72, 0]], [sp(0.105), 0, [-0.37, 0.72, 0]], [sp(0.105), 0, [0.37, 0.72, 0]], [bx(0.16, 0.05, 0.2), 0, [-0.33, 0.8, 0], [0, 0, 0.25]], [bx(0.16, 0.05, 0.2), 0, [0.33, 0.8, 0], [0, 0, -0.25]], // yugo y hombreras
+    [cy(0.02, 0.02, 0.34), 1, [-0.17, 0.76, -0.05], [0, 0, 1.05]], [cy(0.02, 0.02, 0.34), 1, [0.17, 0.76, -0.05], [0, 0, -1.05]], // pistones del cuello
+    [bx(0.26, 0.34, 0.11), 1, [0, 0.5, -0.15]], [cy(0.035, 0.035, 0.16), 0, [-0.08, 0.7, -0.17]], [cy(0.035, 0.035, 0.16), 0, [0.08, 0.7, -0.17]], // unidad de energía
+    [cy(0.016, 0.016, 0.4), 1, [-0.14, 0.2, 0.08], [0.2, 0, 0.3]], [cy(0.016, 0.016, 0.4), 1, [0.14, 0.2, 0.08], [0.2, 0, -0.3]], // hidráulicos del abdomen
+  ]),
+  head: segment([
+    [cy(0.045, 0.055, 0.12), 1, [0, 0.05, 0]], [cy(0.012, 0.012, 0.14), 0, [-0.055, 0.06, -0.04]], [cy(0.012, 0.012, 0.14), 0, [0.055, 0.06, -0.04]],
+    [sp(0.165), 0, [0, 0.22, 0], [0, 0, 0], [1, 1.08, 1.2]], [bx(0.27, 0.05, 0.1), 0, [0, 0.265, 0.135], [0.3, 0, 0]], // cráneo y ceño
+    [bx(0.06, 0.12, 0.1), 0, [-0.11, 0.15, 0.1], [0, 0.2, 0]], [bx(0.06, 0.12, 0.1), 0, [0.11, 0.15, 0.1], [0, -0.2, 0]], // pómulos
+    [sp(0.062), 1, [-0.072, 0.215, 0.15]], [sp(0.062), 1, [0.072, 0.215, 0.15]], [bx(0.04, 0.06, 0.04), 1, [0, 0.15, 0.185]], // cuencas y cavidad nasal
+    [bx(0.17, 0.03, 0.04), 1, [0, 0.1, 0.165]], ...[-3, -2, -1, 0, 1, 2, 3].map((i): Part => [bx(0.018, 0.04, 0.02), 0, [i * 0.024, 0.095, 0.19]]), // dientes
+    [bx(0.2, 0.07, 0.17), 0, [0, 0.045, 0.085]], [bx(0.1, 0.05, 0.06), 0, [0, 0.02, 0.17]], [cy(0.03, 0.03, 0.25), 1, [0, 0.11, 0.02], [0, 0, H]], // mandíbula
+    [bx(0.02, 0.14, 0.22), 1, [0, 0.38, -0.02], [0.15, 0, 0]], // cresta sensora
+  ]),
+  upperArm: segment([[cp(0.05, 0.22), 0, [0, -0.18, 0]], [bx(0.09, 0.2, 0.05), 0, [0, -0.17, 0.05]], [cy(0.015, 0.015, 0.3), 1, [0, -0.18, -0.065]], [cy(0.062, 0.062, 0.11), 1, [0, -0.37, 0], [0, 0, H]]]),
+  foreArm: segment([[cy(0.024, 0.02, 0.32), 0, [-0.028, -0.17, 0]], [cy(0.024, 0.02, 0.32), 0, [0.028, -0.17, 0]], [bx(0.085, 0.16, 0.04), 0, [0, -0.13, 0.04]], [bx(0.085, 0.05, 0.07), 1, [0, -0.345, 0]],
+    ...[-0.03, 0, 0.03].map((x): Part => [bx(0.018, 0.13, 0.024), 0, [x, -0.43, 0.02], [-0.3, 0, 0]]), [bx(0.018, 0.09, 0.024), 0, [-0.05, -0.39, -0.02], [0.5, 0, 0.3]]]), // garras
+  thigh: segment([[cp(0.062, 0.3), 0, [0, -0.24, 0]], [bx(0.11, 0.27, 0.05), 0, [0, -0.22, 0.065]], [cy(0.016, 0.016, 0.38), 1, [-0.05, -0.24, -0.06]], [cy(0.016, 0.016, 0.38), 1, [0.05, -0.24, -0.06]], [cy(0.072, 0.072, 0.13), 1, [0, -0.48, 0], [0, 0, H]]]),
+  shin: segment([[cy(0.03, 0.022, 0.44), 0, [0, -0.24, -0.028]], [cy(0.03, 0.022, 0.44), 0, [0, -0.24, 0.028]], [bx(0.08, 0.32, 0.035), 0, [0, -0.2, 0.06]], [sp(0.05), 1, [0, -0.47, 0]],
+    [bx(0.12, 0.05, 0.28), 1, [0, -0.52, 0.07]], [bx(0.12, 0.04, 0.1), 0, [0, -0.525, 0.24]], [bx(0.05, 0.1, 0.05), 1, [0, -0.47, -0.08], [0.5, 0, 0]]]),
+  blaster: segment([[bx(0.09, 0.1, 0.42), 1, [0, -0.3, 0.1]], [cy(0.03, 0.03, 0.3), 0, [0, -0.3, 0.42], [H, 0, 0]], [bx(0.05, 0.06, 0.16), 0, [0, -0.24, 0.05]]]),
+};
+function inst(seg: (THREE.BufferGeometry | null)[], parent: THREE.Object3D, x: number, y: number, z: number) {
+  const g = new THREE.Group(); g.position.set(x, y, z);
+  seg.forEach((geo, i) => { if (geo) { const m = new THREE.Mesh(geo, MATS[i]); m.castShadow = true; g.add(m); } });
+  parent.add(g); return g;
+}
+const glowTex = canvasTex(64, (c) => { const g = c.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(255,90,60,1)'); g.addColorStop(0.25, 'rgba(255,40,20,.55)'); g.addColorStop(1, 'rgba(255,20,10,0)'); c.fillStyle = g; c.fillRect(0, 0, 64, 64); });
+const glowMat = new THREE.SpriteMaterial({ map: glowTex, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, fog: false });
+const eyeGeo = new THREE.SphereGeometry(0.03, 10, 10);
+interface Bot { root: THREE.Group; torso: THREE.Group; head: THREE.Group; pieces: THREE.Object3D[]; legs: THREE.Group[]; knees: THREE.Group[]; arms: THREE.Group[]; elbows: THREE.Group[]; hp: number; phase: number; alive: boolean; gunner: boolean; cd: number; x: number; z: number }
 function makeRobot(gunner: boolean): Bot {
   const root = new THREE.Group();
-  const legL = limb(root, G.bone, chrome, -0.16, 1.02, 0.5), legR = limb(root, G.bone, chrome, 0.16, 1.02, 0.5);
-  box(0.2, 0.06, 0.34, gunM, -0.16, 0.03, 0.06, root); box(0.2, 0.06, 0.34, gunM, 0.16, 0.03, 0.06, root);
-  box(0.42, 0.15, 0.2, chrome, 0, 1.05, 0, root);
-  const sp = new THREE.Mesh(G.spine, gunM); sp.position.y = 1.42; sp.castShadow = true; root.add(sp);
-  for (let i = 0; i < 5; i++) { const r = new THREE.Mesh(G.rib, chrome); r.rotation.set(Math.PI / 2, 0, Math.PI * 0.75); r.position.y = 1.2 + i * 0.105; r.scale.set(0.95 + (i > 1 ? 0.14 : 0), 0.72, 1); r.castShadow = true; root.add(r); }
-  box(0.1, 0.5, 0.05, chrome, 0, 1.44, 0.15, root); // esternón
-  box(0.68, 0.09, 0.14, chrome, 0, 1.74, 0, root);
-  const armL = limb(root, G.arm, chrome, -0.37, 1.72, 0.38), armR = limb(root, G.arm, chrome, 0.37, 1.72, 0.38);
-  for (const x of [-0.37, 0.37]) { const j = new THREE.Mesh(G.joint, chrome); j.position.set(x, 1.74, 0); j.scale.setScalar(1.35); root.add(j); }
-  if (gunner) { box(0.09, 0.09, 0.5, gunM, 0, -0.82, 0.12, armR); const m = new THREE.Mesh(G.eye, eyeMat); m.position.set(0, -0.82, 0.38); armR.add(m); }
-  box(0.07, 0.14, 0.07, gunM, 0, 1.84, 0, root); // cuello
-  const skull = new THREE.Mesh(G.skull, chrome); skull.position.set(0, 2.02, 0.02); skull.scale.set(1, 1.1, 1.2); skull.castShadow = true; root.add(skull);
-  box(0.2, 0.1, 0.19, chrome, 0, 1.87, 0.08, root); box(0.24, 0.05, 0.12, chrome, 0, 1.95, 0.12, root); // mandíbula y pómulos
-  for (let i = -3; i <= 3; i++) { const tt = new THREE.Mesh(G.tooth, gunM); tt.position.set(i * 0.026, 1.905, 0.185); root.add(tt); }
-  for (const x of [-0.07, 0.07]) { const s = new THREE.Mesh(G.socket, gunM); s.position.set(x, 2.04, 0.175); root.add(s); const e = new THREE.Mesh(G.eye, eyeMat); e.position.set(x, 2.04, 0.215); root.add(e); }
-  scene.add(root);
-  return { root, legL, legR, armL, armR, hp: 0, phase: rnd(0, 6), alive: true, gunner, cd: rnd(1, 3), x: 0, z: 0 };
+  const pelvis = inst(SEG.pelvis, root, 0, 1.08, 0), torso = inst(SEG.torso, root, 0, 1.16, 0), head = inst(SEG.head, torso, 0, 0.78, 0.02);
+  for (const x of [-0.072, 0.072]) { const e = new THREE.Mesh(eyeGeo, eyeMat); e.position.set(x, 0.215, 0.19); head.add(e); }
+  const gl = new THREE.Sprite(glowMat); gl.position.set(0, 0.215, 0.24); gl.scale.set(0.5, 0.26, 1); head.add(gl);
+  const core = new THREE.Mesh(eyeGeo, eyeMat); core.position.set(0, 0.36, 0.2); core.scale.set(1.4, 2.4, 0.6); torso.add(core); // núcleo del pecho
+  const legs: THREE.Group[] = [], knees: THREE.Group[] = [], arms: THREE.Group[] = [], elbows: THREE.Group[] = [];
+  for (const sx of [-1, 1]) {
+    const leg = inst(SEG.thigh, root, sx * 0.16, 1.03, 0), knee = inst(SEG.shin, leg, 0, -0.48, 0); legs.push(leg); knees.push(knee);
+    const arm = inst(SEG.upperArm, torso, sx * 0.37, 0.72, 0), elbow = inst(SEG.foreArm, arm, 0, -0.37, 0); arm.rotation.z = sx * 0.12; arms.push(arm); elbows.push(elbow);
+  }
+  if (gunner) { inst(SEG.blaster, elbows[1], 0, 0, 0); const m = new THREE.Mesh(eyeGeo, eyeMat); m.position.set(0, -0.3, 0.58); elbows[1].add(m); }
+  const k = rnd(0.96, 1.08); root.scale.setScalar(k); scene.add(root);
+  return { root, torso, head, pieces: [head, ...arms, torso, ...legs, pelvis], legs, knees, arms, elbows, hp: 0, phase: rnd(0, 6), alive: true, gunner, cd: rnd(1, 3), x: 0, z: 0 };
 }
 
 // ---------- Arma en primera persona: rifle de caza de una persona corriente ----------
@@ -196,15 +231,22 @@ function burst(x: number, y: number, z: number, n: number, speed: number) { for 
 const debris: { m: THREE.Object3D; v: THREE.Vector3; w: THREE.Vector3; life: number }[] = [];
 function shatter(b: Bot, dir: THREE.Vector3) { // la máquina se desarma en piezas
   b.alive = false; b.root.updateMatrixWorld(true);
-  for (const part of [...b.root.children]) { scene.attach(part); debris.push({ m: part, v: new THREE.Vector3(dir.x * 4 + rnd(-2, 2), rnd(1.5, 5), dir.z * 4 + rnd(-2, 2)), w: new THREE.Vector3(rnd(-7, 7), rnd(-7, 7), rnd(-7, 7)), life: 4 }); }
+  for (const part of b.pieces) { scene.attach(part); debris.push({ m: part, v: new THREE.Vector3(dir.x * 4 + rnd(-2, 2), rnd(1.5, 5), dir.z * 4 + rnd(-2, 2)), w: new THREE.Vector3(rnd(-7, 7), rnd(-7, 7), rnd(-7, 7)), life: 4 }); }
   scene.remove(b.root); burst(b.x, 1.4, b.z, 30, 5); kills++;
 }
 function note(text: string) { $('note').textContent = text; noteT = 2.2; }
+// Baliza: columna de luz roja sobre la calle por la que llegan las máquinas.
+const beamMat = new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff2a18).multiplyScalar(2), transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+const beams = [0, 1].map(() => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.6, 220, 12, 1, true), beamMat); m.visible = false; scene.add(m); return m; });
+const SIDES: [number, number][] = [[0, -1], [1, 0], [0, 1], [-1, 0]]; // norte, este, sur, oeste
 function spawnWave() {
-  wave++; note(t('fps.incoming'));
+  wave++;
+  const a = Math.floor(Math.random() * 4), sides = wave < 3 ? [a] : [a, (a + 1 + Math.floor(Math.random() * 3)) % 4];
+  note(sides.map((sd) => t(`fps.dir${sd}`)).join(' + '));
+  beams.forEach((b, i) => { b.visible = i < sides.length; if (b.visible) b.position.set(SIDES[sides[i]][0] * (HALF + 3), 110, SIDES[sides[i]][1] * (HALF + 3)); });
   for (let i = 0; i < Math.min(3 + wave * 2, 12); i++) {
-    const r = makeRobot(Math.random() < 0.35 && wave > 1), side = Math.floor(Math.random() * 4), d = rnd(30, HALF - 2), o = rnd(-7, 7);
-    r.x = side < 2 ? o : (side === 2 ? -d : d); r.z = side < 2 ? (side === 0 ? -d : d) : o; r.hp = 34 + wave * 5; r.root.position.set(r.x, 0, r.z); bots.push(r);
+    const r = makeRobot(Math.random() < 0.35 && wave > 1), [sx, sz] = SIDES[sides[i % sides.length]], d = rnd(HALF - 8, HALF - 1), o = rnd(-7, 7);
+    r.x = sx ? sx * d : o; r.z = sz ? sz * d : o; r.hp = 40 + wave * 6; r.root.position.set(r.x, 0, r.z); bots.push(r);
   }
 }
 function collide(o: { x: number; z: number }, r: number) {
@@ -228,14 +270,14 @@ function aimTarget(max: number): { bot: Bot | null; dist: number; head: boolean 
   let dist = wallDist(eyeP, dir, max), bot: Bot | null = null, head = false; const h2 = dir.x * dir.x + dir.z * dir.z || 1e-6;
   for (const b of bots) if (b.alive) {
     const tt = ((b.x - eyeP.x) * dir.x + (b.z - eyeP.z) * dir.z) / h2; if (tt <= 0 || tt >= dist) continue;
-    const y = eyeP.y + dir.y * tt; if (y < 0 || y > 2.25) continue;
-    if (Math.hypot(eyeP.x + dir.x * tt - b.x, eyeP.z + dir.z * tt - b.z) < (y > 1.8 ? 0.24 : 0.4)) { dist = tt; bot = b; head = y > 1.8; }
+    const y = eyeP.y + dir.y * tt; if (y < 0 || y > 2.4) continue;
+    if (Math.hypot(eyeP.x + dir.x * tt - b.x, eyeP.z + dir.z * tt - b.z) < (y > 1.95 ? 0.26 : 0.42)) { dist = tt; bot = b; head = y > 1.95; }
   }
   return { bot, dist, head };
 }
 function fire() {
   P.fireCd = 0.115; P.mag--; P.recoil = 1; shake = Math.max(shake, 0.05);
-  const hit = aimTarget(120); flash.visible = true; flash.rotation.z = rnd(0, 6.28); muzzle.intensity = 26;
+  const hit = aimTarget(120); flash.visible = true; flash.rotation.z = rnd(0, 6.28); muzzle.intensity = 9;
   tmp.copy(eyeP).addScaledVector(dir, hit.dist);
   const tr = tracers.find((q) => !q.m.visible) ?? tracers[0]; view.getWorldPosition(tr.m.position); const len = tr.m.position.distanceTo(tmp);
   tr.m.scale.z = len; tr.m.lookAt(tmp); tr.m.position.lerp(tmp, 0.5); tr.m.visible = true; tr.life = 0.05;
@@ -279,6 +321,23 @@ $('go').addEventListener('click', () => {
   if (!TOUCH) { try { void (cv.requestPointerLock() as unknown as Promise<void>)?.catch?.(() => undefined); } catch { /* opcional */ } }
 });
 
+// ---------- Radar y flecha hacia la amenaza más cercana ----------
+const radar = ($('radar') as HTMLCanvasElement).getContext('2d')!;
+function drawRadar() {
+  const R = 60, c = radar, sy = Math.sin(P.yaw), cyw = Math.cos(P.yaw); let best = 1e9, bestAng = 0;
+  c.clearRect(0, 0, 120, 120); c.fillStyle = 'rgba(6,10,16,.55)'; c.beginPath(); c.arc(R, R, R - 2, 0, 6.29); c.fill();
+  c.strokeStyle = 'rgba(255,255,255,.35)'; c.lineWidth = 1; c.stroke(); c.beginPath(); c.arc(R, R, R / 2, 0, 6.29); c.strokeStyle = 'rgba(255,255,255,.12)'; c.stroke();
+  c.fillStyle = 'rgba(255,255,255,.1)'; c.beginPath(); c.moveTo(R, R); c.arc(R, R, R - 2, -Math.PI / 2 - 0.62, -Math.PI / 2 + 0.62); c.fill(); // cono de visión
+  for (const b of bots) if (b.alive) {
+    const dx = b.x - P.x, dz = b.z - P.z, fx = dx * cyw - dz * sy, fz = -dx * sy - dz * cyw, d = Math.hypot(dx, dz), k = Math.min(d, 46) / 46 * (R - 6) / (d || 1);
+    c.fillStyle = b.gunner ? '#ffb347' : '#ff3b30'; c.beginPath(); c.arc(R + fx * k, R - fz * k, d < 46 ? 3.2 : 2.2, 0, 6.29); c.fill();
+    if (d < best) { best = d; bestAng = Math.atan2(fx, fz); }
+  }
+  c.fillStyle = '#fff'; c.beginPath(); c.moveTo(R, R - 5); c.lineTo(R - 4, R + 4); c.lineTo(R + 4, R + 4); c.fill();
+  const ar = $('arrow'); // solo si la amenaza queda fuera de la vista
+  if (best < 1e9 && Math.abs(bestAng) > 0.62 && (P.playing || DEMO)) { ar.style.display = 'block'; ar.style.transform = `rotate(${bestAng}rad) translateY(-${Math.min(innerHeight * 0.34, 190)}px)`; ar.style.opacity = best < 8 ? '1' : '0.7'; } else ar.style.display = 'none';
+}
+
 // ---------- Bucle ----------
 const clock = new THREE.Clock(); let time = 0, hudT = 0;
 function frame() {
@@ -315,11 +374,15 @@ function frame() {
     if (moving) { const sp = (r.gunner ? 2.2 : 3.1) + wave * 0.1; r.x += (dx / d) * sp * dt; r.z += (dz / d) * sp * dt; }
     for (const o of bots) if (o !== r && o.alive) { const ex = r.x - o.x, ez = r.z - o.z, e = Math.hypot(ex, ez); if (e < 1 && e > 0) { r.x += (ex / e) * (1 - e) * 0.5; r.z += (ez / e) * (1 - e) * 0.5; } }
     collide(r, 0.42); r.root.position.set(r.x, 0, r.z); r.root.rotation.y = Math.atan2(dx, dz);
-    const s = moving ? Math.sin(time * 6.5 + r.phase) * 0.6 : 0; r.legL.rotation.x = s; r.legR.rotation.x = -s; r.armL.rotation.x = -s * 0.8 - (d < 3 ? 1.3 : 0); r.armR.rotation.x = r.gunner ? -1.5 : s * 0.8 - (d < 3 ? 1.3 : 0);
-    r.root.position.y = moving ? Math.abs(Math.sin(time * 6.5 + r.phase)) * 0.04 : 0;
+    const ph = time * 6 + r.phase, sw = moving ? Math.sin(ph) : 0, near = d < 3.2 && !r.gunner;
+    r.legs[0].rotation.x = -sw * 0.55; r.legs[1].rotation.x = sw * 0.55; r.knees[0].rotation.x = 0.12 + Math.max(0, -sw) * 0.9; r.knees[1].rotation.x = 0.12 + Math.max(0, sw) * 0.9;
+    r.torso.rotation.x = 0.16 + (near ? 0.18 : 0); r.torso.rotation.y = sw * 0.12; r.head.rotation.x = -0.12;
+    r.arms[0].rotation.x = near ? -1.5 + Math.sin(time * 9 + r.phase) * 0.5 : sw * 0.45; r.elbows[0].rotation.x = near ? -0.5 : -0.45;
+    r.arms[1].rotation.x = r.gunner ? -1.25 : near ? -1.5 - Math.sin(time * 9 + r.phase) * 0.5 : -sw * 0.45; r.elbows[1].rotation.x = r.gunner ? -0.35 : near ? -0.5 : -0.45;
+    r.root.position.y = moving ? Math.abs(Math.cos(ph)) * 0.05 : 0;
     r.cd -= dt;
     if (r.gunner && d < 34 && r.cd <= 0 && (P.playing || DEMO)) {
-      tmp.set(r.x, 1.5, r.z); dir.set(dx, 0.1, dz).normalize();
+      tmp.set(r.x, 1.55, r.z); dir.set(dx, 0.05, dz).normalize();
       if (wallDist(tmp, dir, d) >= d - 0.5) { r.cd = 2.1; const b = bolts.find((q) => !q.m.visible); if (b) { b.m.position.copy(tmp).addScaledVector(dir, 0.6); b.v.copy(dir).multiplyScalar(17); b.m.lookAt(tmp.addScaledVector(dir, 5)); b.life = 3; b.m.visible = true; } } else r.cd = 0.4;
     }
     if (!r.gunner && d < 1.5 && r.cd <= 0) { r.cd = 0.8; hurt(14); }
@@ -344,7 +407,7 @@ function frame() {
   moon.position.set(P.x - 24, 46, P.z + 18); moon.target.position.set(P.x, 0, P.z);
   $('hurt').style.opacity = String(Math.max(0, parseFloat($('hurt').style.opacity || '0') - dt * 2.2));
   if (noteT > 0 && (noteT -= dt) <= 0 && P.reload <= 0) $('note').textContent = '';
-  if ((hudT -= dt) <= 0) { hudT = 0.15; $('hp').style.width = Math.max(0, P.hp) + '%'; $('hpn').textContent = String(Math.max(0, Math.round(P.hp))); $('mag').textContent = String(P.mag); $('kills').textContent = t('fps.kills', { n: kills }); $('wave').textContent = wave ? t('fps.wave', { n: wave }) : ''; $('left').textContent = wave ? t('fps.left', { n: bots.filter((b) => b.alive).length }) : ''; }
+  if ((hudT -= dt) <= 0) { hudT = 0.1; drawRadar(); $('hp').style.width = Math.max(0, P.hp) + '%'; $('hpn').textContent = String(Math.max(0, Math.round(P.hp))); $('mag').textContent = String(P.mag); $('kills').textContent = t('fps.kills', { n: kills }); $('wave').textContent = wave ? t('fps.wave', { n: wave }) : ''; $('left').textContent = wave ? t('fps.left', { n: bots.filter((b) => b.alive).length }) : ''; }
   composer.render();
 }
 if (DEMO) $('menu').style.display = 'none';

@@ -88,7 +88,7 @@ export function makeRig(def: EnemyDef, scene: THREE.Object3D): Rig {
   if (def.shape === 'tri') { // dron
     const body = inst(SEG.drone, root, 0, 0, 0); eye(body, 0, -0.02, 0.36, 2.2, 0.7);
     const spin = ([[-1, -1], [1, -1], [-1, 1], [1, 1]] as const).map(([x, z]) => inst(SEG.rotor, body, x * 0.46, 0.12, z * 0.4));
-    return { root, kind: 'drone', pieces: [body], r: 0.55, h: 0.7, headY: 9, baseY: 1.5, muzzleY: 0, spin };
+    return { root, kind: 'drone', pieces: [body], r: 0.7, h: 0.7, headY: 9, baseY: 1.45, muzzleY: 0, spin };
   }
   if (def.shape === 'hex') { // torreta
     const base = inst(SEG.turretBase, root, 0, 0, 0), top = inst(SEG.turretTop, root, 0, 1.15, 0); eye(top, 0, 0.12, 0.52, 3, 0.9);

@@ -1,7 +1,37 @@
 {
-  "player": { "hp": 100, "speed": 215, "radius": 13, "invulnSeconds": 0.6 },
+  "player": {
+    "hp": 100,
+    "speed": 215,
+    "radius": 13,
+    "invulnSeconds": 0.6
+  },
   "maxEnemiesAlive": 60,
-  "healDrop": { "chance": 0.06, "amount": 20 },
+  "healDrop": {
+    "chance": 0.06,
+    "amount": 20
+  },
   "continueHpFraction": 0.6,
-  "endless": { "arena": { "w": 1500, "h": 1000, "tint": "0x9a8cff" }, "pauseBetweenWaves": 3, "hpGrowthPerWave": 0.06, "bossEvery": 10 }
+  "endless": {
+    "arena": {
+      "w": 1500,
+      "h": 1000,
+      "tint": "0x9a8cff"
+    },
+    "pauseBetweenWaves": 3,
+    "hpGrowthPerWave": 0.06,
+    "bossEvery": 10
+  },
+  "fps": {
+    "_nota": "Ajustes solo de la versión en primera persona. Subir/bajar aquí cambia la dificultad sin tocar código.",
+    "maxAlive": 10,
+    "countScale": 0.55,
+    "enemySpeed": 0.8,
+    "droneSpeed": 0.55,
+    "damageScale": 0.6,
+    "touchCooldown": 1.3,
+    "droneRetreat": 1.4,
+    "hitRadius": 1.35,
+    "regenDelay": 4,
+    "regenPerSecond": 7
+  }
 }

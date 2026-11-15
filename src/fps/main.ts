@@ -16,11 +16,11 @@ import { $, continuePrompt, mainMenu, on, pauseMenu, resultScreen, show } from '
 
 const U = 1 / 25;          // los datos de diseño están en px del prototipo 2D: 25 px = 1 m
 const RANGE = U * 1.6;     // alcances algo mayores en primera persona
-const MAX_ALIVE = 22;
+const F = BALANCE.fps; // dificultad de la versión en primera persona (balance.json)
 setLang(saves.data.settings.lang); audio.setOn(saves.data.settings.sound);
 
-interface Enemy { def: EnemyDef; rig: Rig; hp: number; maxHp: number; x: number; z: number; alive: boolean; cds: number[]; dashCd: number; dashT: number; vx: number; vz: number; summonCd: number; touchCd: number; phase: number; toConvoy: boolean }
-const P = { x: 0, z: 0, yaw: 0, pitch: 0, hp: 100, maxHp: 100, speed: 5.4, mag: 30, fireCd: 0, reload: 0, recoil: 0, bob: 0, stepT: 0 };
+interface Enemy { def: EnemyDef; rig: Rig; hp: number; maxHp: number; x: number; z: number; alive: boolean; cds: number[]; dashCd: number; dashT: number; vx: number; vz: number; summonCd: number; touchCd: number; phase: number; toConvoy: boolean; retreat: number }
+const P = { x: 0, z: 0, yaw: 0, pitch: 0, hp: 100, maxHp: 100, speed: 5.4, mag: 30, fireCd: 0, reload: 0, recoil: 0, bob: 0, stepT: 0, lastHurt: 0 };
 const G = { id: 'endless', mission: undefined as MissionDef | undefined, arena: BALANCE.endless.arena as { w: number; h: number; tint: string }, director: null as Director | null,
   playing: false, paused: false, ended: false, continued: false, coins: 0, dmgMult: 1, weapon: weaponDef('blaster') as WeaponDef, bot: false, speed: 1, lastCoins: 0 };
 const enemies: Enemy[] = [];
@@ -65,7 +65,7 @@ function start(id: string) {
   G.director = G.mission ? new MissionDirector(G.mission) : new EndlessDirector(ENEMIES, BALANCE.endless);
   const stats = playerStats(s, UPGRADES, BALANCE.player);
   G.weapon = weaponDef(s.equipped); G.dmgMult = stats.damageMult; G.coins = 0; G.ended = G.continued = G.paused = false;
-  Object.assign(P, { x: st.x, z: st.z, yaw: convoy ? -Math.PI / 2 : 0, pitch: 0, hp: stats.maxHp, maxHp: stats.maxHp, speed: 5.4 * (stats.speed / BALANCE.player.speed), mag: G.weapon.mag ?? 30, fireCd: 0, reload: 0, recoil: 0 });
+  Object.assign(P, { x: st.x, z: st.z, yaw: convoy ? -Math.PI / 2 : 0, pitch: 0, hp: stats.maxHp, maxHp: stats.maxHp, speed: 5.4 * (stats.speed / BALANCE.player.speed), mag: G.weapon.mag ?? 30, fireCd: 0, reload: 0, recoil: 0, lastHurt: -99 });
   $('wname').textContent = t(G.weapon.nameKey); $('hudAll').style.display = 'block'; $('pauseBtn').style.display = TOUCH ? 'block' : 'none';
   show(null); G.playing = true; lock(); audio.unlock(); audio.alarm();
   note(G.mission ? `${t(G.mission.nameKey)} — ${t(G.mission.briefKey)}` : t('menu.endless'), 5);
@@ -81,10 +81,11 @@ function spawnPoint(where: SpawnRequest['where']) {
 }
 function spawn(req: SpawnRequest) {
   const def = enemyDef(req.enemy);
-  for (let i = 0; i < req.count; i++) {
-    if (!def.boss && enemies.filter((e) => e.alive).length >= MAX_ALIVE) return;
+  const n = def.boss || typeof req.where === 'object' ? req.count : Math.max(1, Math.round(req.count * F.countScale)); // menos máquinas a la vez que en el 2D
+  for (let i = 0; i < n; i++) {
+    if (!def.boss && enemies.filter((e) => e.alive).length >= F.maxAlive) return;
     const p = spawnPoint(req.where), rig = makeRig(def, scene), hp = def.hp * (req.hpMult ?? 1);
-    const e: Enemy = { def, rig, hp, maxHp: hp, x: p.x, z: p.z, alive: true, cds: (def.attacks ?? []).map((a) => a.cooldown * rnd(0.6, 1.2)), dashCd: def.dash?.cooldown ?? 0, dashT: 0, vx: 0, vz: 0, summonCd: def.summon?.cooldown ?? 0, touchCd: 0, phase: rnd(0, 6), toConvoy: !!convoy && !def.boss && Math.random() < 0.45 };
+    const e: Enemy = { def, rig, hp, maxHp: hp, x: p.x, z: p.z, alive: true, cds: (def.attacks ?? []).map((a) => a.cooldown * rnd(0.6, 1.2)), dashCd: def.dash?.cooldown ?? 0, dashT: 0, vx: 0, vz: 0, summonCd: def.summon?.cooldown ?? 0, touchCd: 0, phase: rnd(0, 6), toConvoy: !!convoy && !def.boss && Math.random() < 0.45, retreat: 0 };
     if (rig.kind === 'walker' || rig.kind === 'drone') collide(e, rig.r);
     rig.root.position.set(e.x, rig.baseY, e.z); enemies.push(e);
     const b = beams.find((q) => !q.m.visible); if (b) { b.m.position.set(e.x, 30, e.z); b.m.visible = true; b.life = 0.9; }
@@ -98,10 +99,10 @@ function kill(e: Enemy, dir: THREE.Vector3) {
   G.coins += e.def.coins; G.director!.onEnemyKilled(e.def.id); if (boss === e) boss = undefined;
 }
 function hurt(n: number) {
-  if (G.ended || G.bot) return; P.hp -= n; shake = Math.max(shake, 0.3); $('hurt').style.opacity = '1'; audio.hurt();
+  if (G.ended || G.bot) return; P.hp -= n * F.damageScale; P.lastHurt = time; shake = Math.max(shake, 0.3); $('hurt').style.opacity = '1'; audio.hurt();
   if (P.hp <= 0) G.director!.fail();
 }
-function hurtConvoy(n: number) { if (!convoy || convoy.hp <= 0) return; convoy.hp -= n; burst(convoy.x, 2, convoy.z, 6, 3); if (convoy.hp <= 0) { burst(convoy.x, 2, convoy.z, 120, 9); audio.boom(true); convoy.g.visible = false; } }
+function hurtConvoy(n: number) { if (!convoy || convoy.hp <= 0) return; convoy.hp -= n * F.damageScale; burst(convoy.x, 2, convoy.z, 6, 3); if (convoy.hp <= 0) { burst(convoy.x, 2, convoy.z, 120, 9); audio.boom(true); convoy.g.visible = false; } }
 
 // ---------- Disparo ----------
 const dir = new THREE.Vector3(), tmp = new THREE.Vector3(), eyeP = new THREE.Vector3();
@@ -111,7 +112,7 @@ function trace(o: THREE.Vector3, d: THREE.Vector3, max: number) {
     const tt = ((e.x - o.x) * d.x + (e.z - o.z) * d.z) / h2; if (tt <= 0 || tt >= dist) continue;
     const r = e.rig, y = o.y + d.y * tt, lo = r.kind === 'drone' ? r.baseY - 0.45 : r.kind === 'core' ? 2.3 : 0, hi = r.kind === 'drone' ? r.baseY + 0.45 : r.h;
     if (y < lo || y > hi) continue; const isHead = y > r.headY;
-    if (Math.hypot(o.x + d.x * tt - e.x, o.z + d.z * tt - e.z) < (isHead ? r.r * 0.65 : r.r)) { dist = tt; hit = e; head = isHead; }
+    if (Math.hypot(o.x + d.x * tt - e.x, o.z + d.z * tt - e.z) < (isHead ? r.r * 0.65 : r.r) * F.hitRadius) { dist = tt; hit = e; head = isHead; }
   }
   return { e: hit, dist, head };
 }
@@ -154,14 +155,15 @@ function tickEnemy(e: Enemy, dt: number) {
   if (e.dashT > 0) { e.dashT -= dt; e.x += e.vx * dt; e.z += e.vz * dt; moving = true; }
   else if (def.behavior !== 'turret') {
     let k = 1; if (def.behavior === 'shooter') k = d < range * 0.55 ? -0.6 : d < range * 0.85 ? 0 : 1; if (d < contact) k = 0;
-    const sp = def.speed * U * (rage > 1 ? 1.25 : 1) * k; if (sp) { e.x += (dx / d) * sp * dt; e.z += (dz / d) * sp * dt; moving = true; }
+    if (e.retreat > 0) { e.retreat -= dt; k = -0.8; } // tras golpear se aparta: da un respiro para dispararle
+    const sp = def.speed * U * (r.kind === 'drone' ? F.droneSpeed : F.enemySpeed) * (rage > 1 ? 1.25 : 1) * k; if (sp) { e.x += (dx / d) * sp * dt; e.z += (dz / d) * sp * dt; moving = true; }
     if (def.dash && (e.dashCd -= dt) <= 0 && d < 22 && d > 3) { e.dashCd = def.dash.cooldown / rage; e.dashT = def.dash.duration; e.vx = (dx / d) * def.dash.speed * U; e.vz = (dz / d) * def.dash.speed * U; audio.spawn(); }
   }
   if (r.kind === 'walker' || r.kind === 'drone') {
     for (const o of enemies) if (o !== e && o.alive && o.rig.kind === r.kind) { const ex = e.x - o.x, ez = e.z - o.z, q = Math.hypot(ex, ez), min = r.r + o.rig.r + 0.15; if (q < min && q > 0) { e.x += (ex / q) * (min - q) * 0.5; e.z += (ez / q) * (min - q) * 0.5; } }
     collide(e, r.r);
   }
-  if (def.contactDamage && d < contact + 0.35 && e.touchCd <= 0) { e.touchCd = 0.8; if (toC) hurtConvoy(def.contactDamage); else hurt(def.contactDamage); }
+  if (def.contactDamage && d < contact + 0.35 && e.touchCd <= 0) { e.touchCd = F.touchCooldown; if (r.kind === 'drone') e.retreat = F.droneRetreat; if (toC) hurtConvoy(def.contactDamage); else hurt(def.contactDamage); }
   if (def.attacks) { for (let i = 0; i < e.cds.length; i++) e.cds[i] -= dt * rage; if (d <= range * 1.15) shoot(e, tgt, d, toC ? 1.6 : 1.3); }
   if (def.summon && (e.summonCd -= dt * rage) <= 0) { e.summonCd = def.summon.cooldown; for (let i = 0; i < def.summon.count; i++) { const a = rnd(0, 6.28), w = { x: (e.x + Math.cos(a) * 4) / U + G.arena.w / 2, y: (e.z + Math.sin(a) * 4) / U + G.arena.h / 2 }; spawn({ enemy: def.summon.enemy, count: 1, where: w }); } }
   // animación
@@ -285,6 +287,7 @@ function step(dt: number) {
     const ml = Math.hypot(wx, wz);
     if (ml > 0.1) { const k = P.speed / Math.max(ml, 1); P.x += wx * k * dt; P.z += wz * k * dt; speed = Math.min(ml, 1); if ((P.stepT -= dt * speed) <= 0) { P.stepT = 0.42; audio.step(); } }
     collide(P, 0.6);
+    if (P.hp < P.maxHp && time - P.lastHurt > F.regenDelay) P.hp = Math.min(P.maxHp, P.hp + F.regenPerSecond * dt); // la vida se recupera si te cubres
     camera.position.set(P.x, 1.65, P.z); camera.rotation.set(P.pitch, P.yaw, 0); camera.updateMatrixWorld();
     const aim = trace(eyeP.copy(camera.position), aimDir(), Math.max(G.weapon.range * U * 2.5, 18));
     const firing = (locked && mouseFire) || ((TOUCH || G.bot || !locked) && !!aim.e); P.fireCd -= dt;

@@ -110,6 +110,8 @@ android/                     Proyecto Capacitor generado (se compila en el PC de
   (`U` en main.ts); alcances ×1,6. `weapons.json` tiene `mag` (balas por cargador, solo FPS).
   Controles: WASD o flechas + ratón (clic dispara, R recarga, Esc/P pausa); táctil: stick izquierdo,
   arrastre derecho para mirar, disparo automático al apuntar a una máquina.
+  Dificultad FPS: bloque `fps` de `balance.json` (cantidad, velocidad, daño, vida que se regenera, radio de
+  impacto). El autor encontró la primera versión demasiado difícil (enjambres de drones): no subirla sin que la pruebe.
   Pruebas: `npm run smoke:fps` (arranca todo) y `npm run smoke:fps -- --full` (un bot gana las 6 misiones).
   El juego 2D de Phaser (`index.html`, `src/scenes`, `src/game`) queda congelado; no invertir más en él.
   Pendiente visible: tienda de compras en la versión FPS, pistas del tutorial, escenarios más distintos por misión.

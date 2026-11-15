@@ -119,6 +119,10 @@ android/                     Proyecto Capacitor generado (se compila en el PC de
   Niveles de dificultad en `balance.json → fps.levels` (easy por defecto, guardado en `settings.difficulty`):
   cantidad, velocidad, daño, vida de jefes, ayuda al apuntar y disparo automático. El autor juega en laptop con
   flechas y panel táctil y dos veces dijo que la misión 2 era demasiado difícil: Fácil debe ser realmente fácil.
+  Recompensas en partida (`balance.json → fps.drops`): las máquinas sueltan botiquín, escudo, sobrecarga (daño ×2)
+  o un arma prestada con munición limitada; rachas de 3+ bajas dan monedas extra. Pedido por el autor.
+  Sonido: `audio.ts` con reverberación y compresor; el autor rechazó el primer ambiente (ruido filtrado = «radio con
+  interferencia»): nada de siseo continuo. Sigue siendo sintetizado; lo ideal son grabaciones con licencia.
   Dificultad FPS: bloque `fps` de `balance.json` (cantidad, velocidad, daño, vida que se regenera, radio de
   impacto). El autor encontró la primera versión demasiado difícil (enjambres de drones): no subirla sin que la pruebe.
   Pruebas: `npm run smoke:fps` (arranca todo) y `npm run smoke:fps -- --full` (un bot gana las 6 misiones).

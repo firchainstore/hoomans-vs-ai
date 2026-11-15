@@ -68,6 +68,35 @@
         "assistCone": 0,
         "autoFire": false
       }
+    },
+    "drops": {
+      "_nota": "Recompensas que sueltan las máquinas. chance = probabilidad por máquina normal; los jefes y mechs sueltan siempre. weight = frecuencia relativa.",
+      "chance": 0.24,
+      "seconds": 30,
+      "streakWindow": 4,
+      "table": [
+        {
+          "type": "health",
+          "weight": 4,
+          "amount": 35
+        },
+        {
+          "type": "weapon",
+          "weight": 3,
+          "mags": 3
+        },
+        {
+          "type": "power",
+          "weight": 2,
+          "seconds": 12,
+          "mult": 2
+        },
+        {
+          "type": "shield",
+          "weight": 2,
+          "amount": 50
+        }
+      ]
     }
   }
 }

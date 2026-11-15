@@ -1,7 +1,7 @@
 // Bucle de juego en primera persona. Las REGLAS no viven aquí: MissionDirector/EndlessDirector deciden
 // cuándo aparecen enemigos y cuándo se gana; enemies.json/weapons.json definen comportamiento y armas.
 import * as THREE from 'three';
-import { BALANCE, CAMPAIGNS, ENEMIES, UPGRADES, enemyDef, hex, missionDef, weaponDef } from '../core/data';
+import { BALANCE, CAMPAIGNS, ENEMIES, UPGRADES, WEAPONS, enemyDef, hex, missionDef, weaponDef } from '../core/data';
 import { completeMission, playerStats, recordEndless } from '../core/Economy';
 import { MissionDirector } from '../core/MissionDirector';
 import { EndlessDirector } from '../core/WaveGenerator';
@@ -22,7 +22,7 @@ let D: Level = F.levels.easy; // multiplicadores del nivel de dificultad elegido
 setLang(saves.data.settings.lang); audio.setOn(saves.data.settings.sound);
 
 interface Enemy { def: EnemyDef; rig: Rig; hp: number; maxHp: number; x: number; z: number; alive: boolean; cds: number[]; dashCd: number; dashT: number; vx: number; vz: number; summonCd: number; touchCd: number; phase: number; toConvoy: boolean; retreat: number }
-const P = { x: 0, z: 0, yaw: 0, pitch: 0, hp: 100, maxHp: 100, speed: 5.4, mag: 30, fireCd: 0, reload: 0, recoil: 0, bob: 0, stepT: 0, lastHurt: 0, crouch: 0 };
+const P = { x: 0, z: 0, yaw: 0, pitch: 0, hp: 100, maxHp: 100, speed: 5.4, mag: 30, fireCd: 0, reload: 0, recoil: 0, bob: 0, stepT: 0, lastHurt: 0, crouch: 0, shield: 0, power: 0 };
 const G = { id: 'endless', mission: undefined as MissionDef | undefined, arena: BALANCE.endless.arena as { w: number; h: number; tint: string; theme?: string }, director: null as Director | null,
   playing: false, paused: false, ended: false, continued: false, coins: 0, dmgMult: 1, weapon: weaponDef('blaster') as WeaponDef, bot: false, speed: 1, lastCoins: 0 };
 const enemies: Enemy[] = [];
@@ -45,6 +45,35 @@ const embers = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMate
 const emberPos = new Float32Array(300 * 3); for (let i = 0; i < emberPos.length; i += 3) { emberPos[i] = rnd(-30, 30); emberPos[i + 1] = rnd(0, 10); emberPos[i + 2] = rnd(-30, 30); }
 embers.geometry.setAttribute('position', new THREE.BufferAttribute(emberPos, 3)); embers.frustumCulled = false; scene.add(embers);
 const debris: { m: THREE.Object3D; v: THREE.Vector3; w: THREE.Vector3; life: number }[] = [];
+// ---------- Recompensas que sueltan las máquinas ----------
+const DR = F.drops, PICK_COLORS: Record<string, number> = { health: 0x7ee081, weapon: 0x35e0ff, power: 0xff5a2a, shield: 0x6a8cff };
+const picks = Array.from({ length: 10 }, () => {
+  const g = new THREE.Group(), mat = new THREE.MeshBasicMaterial({ color: 0xffffff }), bm = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+  const crate = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), new THREE.MeshStandardMaterial({ color: 0x20242c, metalness: 0.7, roughness: 0.4 })); crate.castShadow = true;
+  const a = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.14, 0.54), mat), b = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.54, 0.54), mat), beam = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 14, 6, 1, true), bm);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.8, 32), bm); ring.rotation.x = -Math.PI / 2; ring.position.y = -0.85; beam.position.y = 7;
+  const spin = new THREE.Group(); spin.add(crate, a, b); g.add(spin, beam, ring); g.visible = false; scene.add(g);
+  return { g, spin, mat, bm, type: '', x: 0, z: 0, life: 0 };
+});
+let baseWeapon: WeaponDef = weaponDef('blaster'), tempRounds = 0, streak = 0, streakT = 0;
+function drop(e: Enemy) {
+  const sure = !!e.def.boss || e.def.shape === 'mech'; if (!sure && Math.random() > DR.chance) return;
+  const p = picks.find((q) => !q.g.visible); if (!p) return;
+  let roll = Math.random() * DR.table.reduce((n, d) => n + d.weight, 0), type = DR.table[0].type; for (const d of DR.table) { if ((roll -= d.weight) <= 0) { type = d.type; break; } }
+  if (type === 'health' && P.hp > P.maxHp * 0.85) type = 'shield'; // no dar botiquines a quien está sano
+  const c = new THREE.Color(PICK_COLORS[type]); p.mat.color.copy(c).multiplyScalar(3); p.bm.color.copy(c).multiplyScalar(1.5);
+  p.type = type; p.x = e.x; p.z = e.z; p.life = DR.seconds; p.g.position.set(e.x, 0.95, e.z); p.g.visible = true;
+}
+function collect(type: string) {
+  const d = DR.table.find((x) => x.type === type)!; audio.pickup();
+  if (type === 'health') { P.hp = Math.min(P.maxHp, P.hp + d.amount!); note(t('pick.health', { n: d.amount! })); }
+  else if (type === 'shield') { P.shield = Math.min(100, P.shield + d.amount!); note(t('pick.shield', { n: d.amount! })); }
+  else if (type === 'power') { P.power = d.seconds!; note(t('pick.power')); }
+  else { // arma prestada: mejor que la tuya, con munición contada
+    const opts = WEAPONS.filter((w) => w.id !== baseWeapon.id && w.id !== G.weapon.id), w = opts[Math.floor(Math.random() * opts.length)] ?? baseWeapon;
+    G.weapon = w; tempRounds = (w.mag ?? 30) * d.mags!; P.mag = w.mag ?? 30; P.reload = 0; $('wname').textContent = t(w.nameKey); note(t('pick.weapon', { name: t(w.nameKey) }), 3.5);
+  }
+}
 function note(text: string, secs = 2.4) { $('note').textContent = text; noteT = secs; }
 
 // ---------- Partida ----------
@@ -52,7 +81,7 @@ const toW = (p: { x: number; y: number }) => ({ x: (p.x - G.arena.w / 2) * U, z:
 function clearWorld() {
   for (const e of enemies) scene.remove(e.rig.root); enemies.length = 0; boss = undefined;
   for (const d of debris) scene.remove(d.m); debris.length = 0;
-  for (const b of bolts) b.m.visible = false; convoy = undefined; terminals = []; gateBeam.visible = false; lastWave = 0;
+  for (const b of bolts) b.m.visible = false; convoy = undefined; terminals = []; gateBeam.visible = false; lastWave = 0; for (const p of picks) p.g.visible = false; tempRounds = 0; streak = 0;
 }
 function start(id: string) {
   clearWorld();
@@ -67,8 +96,8 @@ function start(id: string) {
   if (o?.type === 'defend') { const a = toW(o.convoy.from), b = toW(o.convoy.to); convoy = { g: makeConvoy(L.group), x: a.x, z: a.z, hp: o.convoy.hp, max: o.convoy.hp, t: 0, fx: a.x, fz: a.z, tx: b.x, tz: b.z, speed: o.convoy.speed * U }; convoy.g.rotation.y = Math.atan2(-(b.z - a.z), b.x - a.x); }
   G.director = G.mission ? new MissionDirector(G.mission) : new EndlessDirector(ENEMIES, BALANCE.endless);
   const stats = playerStats(s, UPGRADES, BALANCE.player);
-  G.weapon = weaponDef(s.equipped); G.dmgMult = stats.damageMult; G.coins = 0; G.ended = G.continued = G.paused = false;
-  Object.assign(P, { x: st.x, z: st.z, yaw: convoy ? -Math.PI / 2 : 0, pitch: 0, hp: stats.maxHp, maxHp: stats.maxHp, speed: 5.4 * (stats.speed / BALANCE.player.speed), mag: G.weapon.mag ?? 30, fireCd: 0, reload: 0, recoil: 0, lastHurt: -99 });
+  G.weapon = baseWeapon = weaponDef(s.equipped); G.dmgMult = stats.damageMult; G.coins = 0; G.ended = G.continued = G.paused = false;
+  Object.assign(P, { x: st.x, z: st.z, yaw: convoy ? -Math.PI / 2 : 0, pitch: 0, hp: stats.maxHp, maxHp: stats.maxHp, speed: 5.4 * (stats.speed / BALANCE.player.speed), mag: G.weapon.mag ?? 30, fireCd: 0, reload: 0, recoil: 0, lastHurt: -99, shield: 0, power: 0 });
   $('wname').textContent = t(G.weapon.nameKey); $('hudAll').style.display = 'block'; $('pauseBtn').style.display = $('crouchBtn').style.display = TOUCH ? 'block' : 'none';
   audio.unlock(); camera.position.set(P.x, 1.65, P.z); camera.rotation.set(0, P.yaw, 0);
   if (G.bot) return begin();
@@ -116,10 +145,12 @@ function kill(e: Enemy, dir: THREE.Vector3) {
   e.alive = false; e.rig.root.updateMatrixWorld(true); const big = !!e.def.boss || e.def.shape === 'mech';
   for (const part of e.rig.pieces) { scene.attach(part); debris.push({ m: part, v: new THREE.Vector3(dir.x * 4 + rnd(-2, 2), rnd(1.5, big ? 8 : 5), dir.z * 4 + rnd(-2, 2)), w: new THREE.Vector3(rnd(-7, 7), rnd(-7, 7), rnd(-7, 7)), life: 4 }); }
   scene.remove(e.rig.root); burst(e.x, e.rig.baseY + e.rig.h * 0.5, e.z, big ? 80 : 30, big ? 8 : 5); audio.boom(big); if (big) shake = 0.6;
-  G.coins += e.def.coins; G.director!.onEnemyKilled(e.def.id); if (boss === e) boss = undefined;
+  G.coins += e.def.coins; G.director!.onEnemyKilled(e.def.id); if (boss === e) boss = undefined; drop(e);
+  streak = streakT > 0 ? streak + 1 : 1; streakT = DR.streakWindow;
+  if (streak >= 3) { G.coins += streak; note(t('fps.streak', { n: streak, c: streak }), 1.8); audio.streak(); }
 }
 function hurt(n: number) {
-  if (G.ended || G.bot) return; P.hp -= n * F.damageScale * D.damage; P.lastHurt = time; shake = Math.max(shake, 0.3); $('hurt').style.opacity = '1'; audio.hurt();
+  if (G.ended || G.bot) return; let dmg = n * F.damageScale * D.damage; const ab = Math.min(P.shield, dmg); P.shield -= ab; dmg -= ab; P.hp -= dmg; P.lastHurt = time; shake = Math.max(shake, 0.3); $('hurt').style.opacity = '1'; audio.hurt();
   if (P.hp <= 0) G.director!.fail();
 }
 function hurtConvoy(n: number) { if (!convoy || convoy.hp <= 0) return; convoy.hp -= n * F.damageScale; burst(convoy.x, 2, convoy.z, 6, 3); if (convoy.hp <= 0) { burst(convoy.x, 2, convoy.z, 120, 9); audio.boom(true); convoy.g.visible = false; } }
@@ -145,9 +176,10 @@ function fire() {
     const h = trace(eyeP.copy(camera.position), aimDir(rnd(-0.5, 0.5) * sp, rnd(-0.5, 0.5) * sp), max); tmp.copy(eyeP).addScaledVector(dir, h.dist);
     const tr = tracers[(spI + i) % tracers.length]; view.getWorldPosition(tr.m.position); tr.m.scale.z = tr.m.position.distanceTo(tmp); tr.m.lookAt(tmp); tr.m.position.lerp(tmp, 0.5); (tr.m.material as THREE.MeshBasicMaterial).color.set(hex(w.color)).multiplyScalar(3); tr.m.visible = true; tr.life = 0.05;
     burst(tmp.x, tmp.y, tmp.z, h.e ? 8 : 4, h.e ? 3.5 : 2);
-    if (h.e) { anyHit = true; anyHead ||= h.head; h.e.hp -= w.damage * G.dmgMult * (h.head ? 2 : 1); if (h.e.hp <= 0) kill(h.e, dir); }
+    if (h.e) { anyHit = true; anyHead ||= h.head; h.e.hp -= w.damage * G.dmgMult * (h.head ? 2 : 1) * (P.power > 0 ? 2 : 1); if (h.e.hp <= 0) kill(h.e, dir); }
   }
   if (anyHit) { $('cross').classList.add('on'); setTimeout(() => $('cross').classList.remove('on'), 90); if (anyHead) audio.head(); else audio.hit(); }
+  if (tempRounds > 0 && --tempRounds <= 0) { G.weapon = baseWeapon; P.mag = baseWeapon.mag ?? 30; P.reload = 0; $('wname').textContent = t(baseWeapon.nameKey); note(t('pick.temp_out'), 3); audio.reload(); return; }
   if (P.mag <= 0) startReload();
 }
 function startReload() { if (P.reload > 0 || P.mag >= (G.weapon.mag ?? 30)) return; P.reload = 1.5; note(t('fps.reload'), 1.5); audio.reload(); }
@@ -280,6 +312,7 @@ function drawHud() {
   const bar = boss?.alive ? [boss.hp / boss.maxHp, t(boss.def.nameKey), '#ff3b30'] as const : convoy ? [convoy.hp / convoy.max, t('hud.convoy'), '#ffb347'] as const : null;
   $('bar2').style.display = bar ? 'block' : 'none'; $('sub2').textContent = bar ? bar[1] : ''; if (bar) { const f = $('bar2').firstElementChild as HTMLElement; f.style.width = Math.max(0, bar[0]) * 100 + '%'; f.style.background = bar[2]; }
   $('hp').style.width = (Math.max(0, P.hp) / P.maxHp) * 100 + '%'; $('hpn').textContent = String(Math.max(0, Math.round(P.hp))); $('mag').textContent = String(P.mag); $('coins').textContent = `◆ ${G.coins}`;
+  $('buffs').textContent = [P.shield > 0 ? t('hud.shield', { n: Math.ceil(P.shield) }) : '', P.power > 0 ? t('hud.power', { s: Math.ceil(P.power) }) : '', tempRounds > 0 ? t('hud.rounds', { n: tempRounds }) : ''].filter(Boolean).join('  ·  ');
 }
 
 // ---------- Bot de pruebas (scripts/smoke-fps.mjs): invulnerable, apunta solo y va al objetivo ----------
@@ -288,7 +321,8 @@ function botInput() {
   P.hp = P.maxHp; let best: Enemy | null = null, bd = 1e9;
   for (const e of enemies) if (e.alive) { const d = Math.hypot(e.x - P.x, e.z - P.z); if (d < bd) { bd = d; best = e; } }
   if (best) { const r = best.rig, ay = r.kind === 'drone' ? r.baseY : r.kind === 'core' ? 4.2 : r.kind === 'turret' ? 1.2 : r.h * 0.6; P.yaw = Math.atan2(-(best.x - P.x), -(best.z - P.z)); P.pitch = Math.atan2(ay - 1.65, bd); }
-  const g = goal(), tgt = g && !boss ? g : best && bd > 9 ? best : null, stop = convoy ? 6 : 1.2; let mx = 0, mz = 0;
+  const near = picks.find((q) => q.g.visible && Math.hypot(q.x - P.x, q.z - P.z) < 8);
+  const g = near ?? goal(), tgt = g && (near || !boss) ? g : best && bd > 9 ? best : null, stop = near ? 0.5 : convoy ? 6 : 1.2; let mx = 0, mz = 0;
   if (tgt) { const dx = tgt.x - P.x, dz = tgt.z - P.z, d = Math.hypot(dx, dz); if (d > stop) { mx = dx / d; mz = dz / d; } }
   if (botStrafe > 0) { botStrafe -= 0.033; const k = mx; mx = -mz; mz = k; }
   if ((botStuck += 0.033) > 1) { const moved = Math.abs(P.x + P.z * 7 - botLast); botLast = P.x + P.z * 7; botStuck = 0; if ((mx || mz) && moved < 0.5) botStrafe = 0.9; }
@@ -323,7 +357,7 @@ function step(dt: number) {
     }
     const aim = trace(eyeP.copy(camera.position), aimDir(), Math.max(G.weapon.range * U * 2.5, 18));
     const firing = (locked && mouseFire) || ((TOUCH || G.bot || !locked || D.autoFire) && !!aim.e); P.fireCd -= dt;
-    if (P.reload > 0) { if ((P.reload -= dt) <= 0) P.mag = G.weapon.mag ?? 30; } else if (firing && P.fireCd <= 0) fire();
+    if (P.reload > 0) { if ((P.reload -= dt) <= 0) P.mag = Math.min(G.weapon.mag ?? 30, tempRounds > 0 ? tempRounds : 999); } else if (firing && P.fireCd <= 0) fire();
     const d = G.director!;
     if (gate >= 0 && (gateT -= dt) <= 0 && !(d instanceof EndlessDirector)) nextGate();
     for (const req of d.update(dt, enemies.filter((e) => e.alive).length)) spawn(req);
@@ -337,6 +371,11 @@ function step(dt: number) {
       d.hackTick(i, dt); audio.hack(); note(t('fps.hacking', { p: Math.round(d.hackProgress[i] * 100) }), 0.4);
       if (d.hackProgress[i] >= 1) { tm.finished = true; tm.done(); audio.coin(); }
     });
+    for (const p of picks) if (p.g.visible) {
+      p.spin.rotation.y += dt * 2.2; p.g.position.y = 0.95 + Math.sin(time * 3 + p.x) * 0.12; if ((p.life -= dt) < 5) p.g.visible = p.life > 0 && Math.sin(p.life * 12) > -0.3;
+      if (p.life > 0 && Math.hypot(p.x - P.x, p.z - P.z) < 1.4) { p.g.visible = false; p.life = 0; collect(p.type); } else if (p.life <= 0) p.g.visible = false;
+    }
+    if (P.power > 0) P.power -= dt; if (streakT > 0) streakT -= dt;
     if (d.status !== 'running') end(d.status === 'won');
   } else if (!G.paused) P.yaw += dt * 0.04; // cámara lenta en menús
   P.bob += dt * speed * 9; P.recoil = Math.max(0, P.recoil - dt * 9); shake = Math.max(0, shake - dt);
@@ -378,5 +417,5 @@ function frame() {
 }
 buildLevel(G.arena.w, G.arena.h, 'menu', hex(G.arena.tint), []); // escenario de fondo del menú
 mainMenu();
-(window as unknown as { __FPS: object }).__FPS = { G, P, enemies, start };
+(window as unknown as { __FPS: object }).__FPS = { G, P, enemies, start, picks };
 frame();

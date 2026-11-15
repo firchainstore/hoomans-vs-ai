@@ -31,6 +31,7 @@ Leyenda de complejidad: **[ALTA]** = requiere el modelo más capaz y/o pruebas e
 - [x] Seis máquinas modeladas: dron, sintético, torreta, mech, Cazador Alfa, TUTELA.
 - [x] Orientación: radar, flecha a la amenaza, marcador del objetivo con distancia, haz rojo donde aparecen.
 - [x] Sonido sintetizado y controles con flechas del teclado.
+- [x] Pantalla de situación y misión, niveles de dificultad con ayuda al apuntar, recompensas en partida y sonido rehecho.
 - [ ] **[TÚ]** Jugar las 6 misiones y anotar dificultad, velocidad y puntería (el equilibrio viene del 2D y solo lo validó un bot invulnerable).
 - [ ] **[ALTA]** Ajuste de equilibrio para primera persona (vida de jefes, daño, cantidad de máquinas).
 - [ ] **[ALTA]** Rendimiento en móvil: niveles de calidad (sombras, bloom, resolución); medir en teléfono real.

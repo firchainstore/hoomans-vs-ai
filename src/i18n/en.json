@@ -133,5 +133,14 @@
   "mission.m6.tip": "It fires in rings: stand between two projectiles or take cover behind a monolith. Clear the reinforcements when they appear.",
   "endless.story": "TUTELA has fallen, but its factories keep producing. Someone has to hold the street.",
   "endless.goal": "Hold out for as many waves as you can. Each wave brings more machines, and your best run is saved.",
-  "endless.tip": "You get a few seconds between waves: reload with R and find good cover."
+  "endless.tip": "You get a few seconds between waves: reload with R and find good cover.",
+  "pick.health": "MEDKIT +{n}",
+  "pick.weapon": "WEAPON: {name} · LIMITED AMMO",
+  "pick.power": "OVERCHARGE: DOUBLE DAMAGE",
+  "pick.shield": "SHIELD +{n}",
+  "pick.temp_out": "OUT OF AMMO: BACK TO YOUR WEAPON",
+  "fps.streak": "STREAK x{n} · +{c} ◆",
+  "hud.shield": "SHIELD {n}",
+  "hud.power": "DAMAGE x2 · {s} s",
+  "hud.rounds": "{n} rounds"
 }

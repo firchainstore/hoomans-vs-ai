@@ -133,5 +133,14 @@
   "mission.m6.tip": "Dispara en anillo: colócate entre dos proyectiles o cúbrete tras un monolito. Elimina a los refuerzos cuando aparezcan.",
   "endless.story": "TUTELA ha caído, pero sus fábricas siguen produciendo. Alguien tiene que mantener la calle.",
   "endless.goal": "Aguanta todas las oleadas que puedas. Cada oleada trae más máquinas, y tu mejor marca queda guardada.",
-  "endless.tip": "Entre oleadas tienes unos segundos: recarga con R y busca una buena cobertura."
+  "endless.tip": "Entre oleadas tienes unos segundos: recarga con R y busca una buena cobertura.",
+  "pick.health": "BOTIQUÍN +{n}",
+  "pick.weapon": "ARMA: {name} · MUNICIÓN LIMITADA",
+  "pick.power": "SOBRECARGA: DAÑO DOBLE",
+  "pick.shield": "ESCUDO +{n}",
+  "pick.temp_out": "SIN MUNICIÓN: VUELVES A TU ARMA",
+  "fps.streak": "RACHA x{n} · +{c} ◆",
+  "hud.shield": "ESCUDO {n}",
+  "hud.power": "DAÑO x2 · {s} s",
+  "hud.rounds": "{n} balas"
 }

@@ -74,6 +74,6 @@ export interface SaveData {
   skins: string[]; skin: string;
   completed: string[];
   bestWave: number; bestScore: number;
-  settings: { lang: string; sound: boolean };
+  settings: { lang: string; sound: boolean; difficulty?: string };
   purchases: { removeAds: boolean; owned: string[] };
 }

@@ -114,6 +114,11 @@ android/                     Proyecto Capacitor generado (se compila en el PC de
   coberturas y niebla en la tabla `THEMES` de `level.ts`. Las máquinas llegan por UNA «puerta» (lado de la zona)
   marcada con haz rojo, que rota cada `fps.gateSeconds`; el autor rechazó que aparecieran por la espalda.
   Agacharse (C/Ctrl/Shift o botón ▼): baja la cámara y los disparos enemigos chocan con coberturas de ≥1 m.
+  Cada partida abre con una pantalla de situación/misión/consejo (`ui.briefing`, claves `mission.<id>.story|goal|tip`
+  y `endless.*`): toda misión nueva debe traer esos tres textos en es y en.
+  Niveles de dificultad en `balance.json → fps.levels` (easy por defecto, guardado en `settings.difficulty`):
+  cantidad, velocidad, daño, vida de jefes, ayuda al apuntar y disparo automático. El autor juega en laptop con
+  flechas y panel táctil y dos veces dijo que la misión 2 era demasiado difícil: Fácil debe ser realmente fácil.
   Dificultad FPS: bloque `fps` de `balance.json` (cantidad, velocidad, daño, vida que se regenera, radio de
   impacto). El autor encontró la primera versión demasiado difícil (enjambres de drones): no subirla sin que la pruebe.
   Pruebas: `npm run smoke:fps` (arranca todo) y `npm run smoke:fps -- --full` (un bot gana las 6 misiones).

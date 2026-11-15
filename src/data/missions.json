@@ -83,28 +83,28 @@
     },
     "spawns": [
       {
-        "at": 1,
+        "at": 3,
         "enemy": "drone",
         "count": 2,
-        "every": 2.6,
+        "every": 4,
         "until": 90
       },
       {
-        "at": 15,
+        "at": 22,
         "enemy": "android",
         "count": 1,
-        "every": 8,
+        "every": 13,
         "until": 90
       },
       {
-        "at": 45,
+        "at": 50,
         "enemy": "drone",
-        "count": 3,
-        "every": 6,
+        "count": 2,
+        "every": 9,
         "until": 90
       },
       {
-        "at": 60,
+        "at": 66,
         "enemy": "mech",
         "count": 1
       }

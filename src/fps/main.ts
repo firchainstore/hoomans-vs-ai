@@ -12,11 +12,13 @@ import { audio } from './audio';
 import { TOUCH, camera, composer, glowMat, moon, renderer, rnd, scene, sky } from './gfx';
 import { L, buildLevel, collide, wallDist, type Keep } from './level';
 import { makeConvoy, makeRig, makeTerminal, makeViewModel, type Rig } from './models';
-import { $, continuePrompt, mainMenu, on, pauseMenu, resultScreen, show } from './ui';
+import { $, briefing, continuePrompt, mainMenu, on, pauseMenu, resultScreen, show } from './ui';
 
 const U = 1 / 25;          // los datos de diseño están en px del prototipo 2D: 25 px = 1 m
 const RANGE = U * 1.6;     // alcances algo mayores en primera persona
 const F = BALANCE.fps; // dificultad de la versión en primera persona (balance.json)
+type Level = typeof F.levels.easy;
+let D: Level = F.levels.easy; // multiplicadores del nivel de dificultad elegido
 setLang(saves.data.settings.lang); audio.setOn(saves.data.settings.sound);
 
 interface Enemy { def: EnemyDef; rig: Rig; hp: number; maxHp: number; x: number; z: number; alive: boolean; cds: number[]; dashCd: number; dashT: number; vx: number; vz: number; summonCd: number; touchCd: number; phase: number; toConvoy: boolean; retreat: number }
@@ -54,7 +56,7 @@ function clearWorld() {
 }
 function start(id: string) {
   clearWorld();
-  const s = saves.data; G.id = id; G.mission = id === 'endless' ? undefined : missionDef(id); G.arena = G.mission?.arena ?? BALANCE.endless.arena;
+  const s = saves.data; G.id = id; D = (F.levels as Record<string, Level>)[s.settings.difficulty ?? 'easy'] ?? F.levels.easy; G.mission = id === 'endless' ? undefined : missionDef(id); G.arena = G.mission?.arena ?? BALANCE.endless.arena;
   const o = G.mission?.objective, st = G.mission?.playerStart ? toW(G.mission.playerStart) : { x: 0, z: 0 }, keep: Keep[] = [{ ...st, r: 5 }];
   for (const sp of G.mission?.spawns ?? []) if (typeof sp.where === 'object') keep.push({ ...toW(sp.where), r: 3.5 });
   if (o?.type === 'hack') for (const p of o.terminals) keep.push({ ...toW(p), r: o.radius * U + 2 });
@@ -68,9 +70,13 @@ function start(id: string) {
   G.weapon = weaponDef(s.equipped); G.dmgMult = stats.damageMult; G.coins = 0; G.ended = G.continued = G.paused = false;
   Object.assign(P, { x: st.x, z: st.z, yaw: convoy ? -Math.PI / 2 : 0, pitch: 0, hp: stats.maxHp, maxHp: stats.maxHp, speed: 5.4 * (stats.speed / BALANCE.player.speed), mag: G.weapon.mag ?? 30, fireCd: 0, reload: 0, recoil: 0, lastHurt: -99 });
   $('wname').textContent = t(G.weapon.nameKey); $('hudAll').style.display = 'block'; $('pauseBtn').style.display = $('crouchBtn').style.display = TOUCH ? 'block' : 'none';
-  show(null); G.playing = true; lock(); audio.unlock(); audio.alarm();
-  note(G.mission ? `${t(G.mission.nameKey)} — ${t(G.mission.briefKey)}` : t('menu.endless'), 5);
+  audio.unlock(); camera.position.set(P.x, 1.65, P.z); camera.rotation.set(0, P.yaw, 0);
+  if (G.bot) return begin();
+  $('hudAll').style.display = 'none'; G.playing = false; G.paused = true; // el mundo espera detrás del texto
+  briefing(id, CAMPAIGNS.find((c) => c.missions.includes(id))?.missions.indexOf(id) ?? -1, G.mission ? t(G.mission.nameKey) : t('menu.endless'));
 }
+function begin() { $('hudAll').style.display = 'block'; show(null); G.paused = false; G.playing = true; lock(); audio.alarm(); }
+on('go', begin);
 // Las máquinas llegan por UN lado de la zona (la "puerta"), marcado con un haz rojo; cambia cada cierto tiempo.
 let gate = -1, gateT = 0;
 const gateBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 2, 240, 12, 1, true), beamMat); gateBeam.visible = false; scene.add(gateBeam);
@@ -95,10 +101,10 @@ let lastWave = 0;
 function spawn(req: SpawnRequest) {
   const def = enemyDef(req.enemy), dd = G.director;
   if (dd instanceof EndlessDirector && dd.wave !== lastWave) { lastWave = dd.wave; nextGate(); }
-  const n = def.boss || typeof req.where === 'object' ? req.count : Math.max(1, Math.round(req.count * F.countScale)); // menos máquinas a la vez que en el 2D
+  const n = def.boss || typeof req.where === 'object' ? req.count : Math.max(1, Math.round(req.count * F.countScale * D.count)); // menos máquinas a la vez que en el 2D
   for (let i = 0; i < n; i++) {
-    if (!def.boss && enemies.filter((e) => e.alive).length >= F.maxAlive) return;
-    const p = spawnPoint(req.where), rig = makeRig(def, scene), hp = def.hp * (req.hpMult ?? 1);
+    if (!def.boss && enemies.filter((e) => e.alive).length >= D.maxAlive) return;
+    const p = spawnPoint(req.where), rig = makeRig(def, scene), hp = def.hp * (req.hpMult ?? 1) * (def.boss ? D.bossHp : 1);
     const e: Enemy = { def, rig, hp, maxHp: hp, x: p.x, z: p.z, alive: true, cds: (def.attacks ?? []).map((a) => a.cooldown * rnd(0.6, 1.2)), dashCd: def.dash?.cooldown ?? 0, dashT: 0, vx: 0, vz: 0, summonCd: def.summon?.cooldown ?? 0, touchCd: 0, phase: rnd(0, 6), toConvoy: !!convoy && !def.boss && Math.random() < 0.45, retreat: 0 };
     if (rig.kind === 'walker' || rig.kind === 'drone') collide(e, rig.r);
     rig.root.position.set(e.x, rig.baseY, e.z); enemies.push(e);
@@ -113,7 +119,7 @@ function kill(e: Enemy, dir: THREE.Vector3) {
   G.coins += e.def.coins; G.director!.onEnemyKilled(e.def.id); if (boss === e) boss = undefined;
 }
 function hurt(n: number) {
-  if (G.ended || G.bot) return; P.hp -= n * F.damageScale; P.lastHurt = time; shake = Math.max(shake, 0.3); $('hurt').style.opacity = '1'; audio.hurt();
+  if (G.ended || G.bot) return; P.hp -= n * F.damageScale * D.damage; P.lastHurt = time; shake = Math.max(shake, 0.3); $('hurt').style.opacity = '1'; audio.hurt();
   if (P.hp <= 0) G.director!.fail();
 }
 function hurtConvoy(n: number) { if (!convoy || convoy.hp <= 0) return; convoy.hp -= n * F.damageScale; burst(convoy.x, 2, convoy.z, 6, 3); if (convoy.hp <= 0) { burst(convoy.x, 2, convoy.z, 120, 9); audio.boom(true); convoy.g.visible = false; } }
@@ -170,7 +176,7 @@ function tickEnemy(e: Enemy, dt: number) {
   else if (def.behavior !== 'turret') {
     let k = 1; if (def.behavior === 'shooter') k = d < range * 0.55 ? -0.6 : d < range * 0.85 ? 0 : 1; if (d < contact) k = 0;
     if (e.retreat > 0) { e.retreat -= dt; k = -0.8; } // tras golpear se aparta: da un respiro para dispararle
-    const sp = def.speed * U * (r.kind === 'drone' ? F.droneSpeed : F.enemySpeed) * (rage > 1 ? 1.25 : 1) * k; if (sp) { e.x += (dx / d) * sp * dt; e.z += (dz / d) * sp * dt; moving = true; }
+    const sp = def.speed * U * (r.kind === 'drone' ? F.droneSpeed : F.enemySpeed) * D.speed * (rage > 1 ? 1.25 : 1) * k; if (sp) { e.x += (dx / d) * sp * dt; e.z += (dz / d) * sp * dt; moving = true; }
     if (def.dash && (e.dashCd -= dt) <= 0 && d < 22 && d > 3) { e.dashCd = def.dash.cooldown / rage; e.dashT = def.dash.duration; e.vx = (dx / d) * def.dash.speed * U; e.vz = (dz / d) * def.dash.speed * U; audio.spawn(); }
   }
   if (r.kind === 'walker' || r.kind === 'drone') {
@@ -304,10 +310,19 @@ function step(dt: number) {
     const ml = Math.hypot(wx, wz);
     if (ml > 0.1) { const k = (P.speed * (1 - 0.5 * P.crouch)) / Math.max(ml, 1); P.x += wx * k * dt; P.z += wz * k * dt; speed = Math.min(ml, 1); if ((P.stepT -= dt * speed) <= 0) { P.stepT = 0.42; audio.step(); } }
     collide(P, 0.6);
-    if (P.hp < P.maxHp && time - P.lastHurt > F.regenDelay) P.hp = Math.min(P.maxHp, P.hp + F.regenPerSecond * dt); // la vida se recupera si te cubres
+    if (P.hp < P.maxHp && time - P.lastHurt > F.regenDelay) P.hp = Math.min(P.maxHp, P.hp + F.regenPerSecond * D.regen * dt); // la vida se recupera si te cubres
     camera.position.set(P.x, eyeY(), P.z); camera.rotation.set(P.pitch, P.yaw, 0); camera.updateMatrixWorld();
+    if (D.assist && !G.bot) { // ayuda al apuntar: la mira se acerca sola a la máquina que casi tienes encima
+      let best: Enemy | null = null, bo = D.assistCone, by = 0, bp = 0;
+      for (const e of enemies) if (e.alive) {
+        const r = e.rig, ty = r.kind === 'drone' ? r.baseY : r.kind === 'core' ? 4.2 : r.kind === 'turret' ? 1.2 : r.h * 0.62, dx = e.x - P.x, dz = e.z - P.z, d = Math.hypot(dx, dz);
+        const wy = Math.atan2(-dx, -dz), wp = Math.atan2(ty - eyeY(), d), oy = Math.atan2(Math.sin(wy - P.yaw), Math.cos(wy - P.yaw)), off = Math.hypot(oy, wp - P.pitch);
+        if (off < bo && d < 45) { bo = off; best = e; by = oy; bp = wp - P.pitch; }
+      }
+      if (best) { const k = Math.min(1, D.assist * dt); P.yaw += by * k; P.pitch += bp * k; camera.rotation.set(P.pitch, P.yaw, 0); camera.updateMatrixWorld(); }
+    }
     const aim = trace(eyeP.copy(camera.position), aimDir(), Math.max(G.weapon.range * U * 2.5, 18));
-    const firing = (locked && mouseFire) || ((TOUCH || G.bot || !locked) && !!aim.e); P.fireCd -= dt;
+    const firing = (locked && mouseFire) || ((TOUCH || G.bot || !locked || D.autoFire) && !!aim.e); P.fireCd -= dt;
     if (P.reload > 0) { if ((P.reload -= dt) <= 0) P.mag = G.weapon.mag ?? 30; } else if (firing && P.fireCd <= 0) fire();
     const d = G.director!;
     if (gate >= 0 && (gateT -= dt) <= 0 && !(d instanceof EndlessDirector)) nextGate();

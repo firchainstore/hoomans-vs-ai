@@ -26,7 +26,7 @@ export function mainMenu() {
   const s = saves.data, best = s.bestScore ? ` · ${t('menu.best', { n: s.bestWave, s: s.bestScore })}` : '';
   show(`${title()}<p>${t('menu.tagline')}</p><div class="col">
     ${btn('missions', t('menu.campaign'), 'p')}${btn('play', t('menu.endless') + best, '', 'endless')}${btn('workshop', t('menu.workshop') + coins())}
-    <div class="row">${btn('sound', t(s.settings.sound ? 'settings.sound_on' : 'settings.sound_off'), 's')}${btn('lang', t('settings.language'), 's')}</div></div>
+    <div class="row">${btn('diff', t(`settings.diff_${s.settings.difficulty ?? 'easy'}`), 's')}${btn('sound', t(s.settings.sound ? 'settings.sound_on' : 'settings.sound_off'), 's')}${btn('lang', t('settings.language'), 's')}</div></div>
     <div class="dim">${t(TOUCH ? 'fps.help_touch' : 'fps.help_pc')} · v${cfg.version}</div>`);
 }
 export function missionsMenu() {
@@ -47,6 +47,13 @@ export function workshopMenu() {
     return `<div class="line" ${eq ? 'style="border-color:#ffb347"' : ''}><div>${t(w.nameKey)}<small>${t(w.descKey)}</small></div>${btn(own ? 'equip' : 'buyW', eq ? t('workshop.equipped') : own ? t('workshop.equip') : '◆ ' + w.cost, 's', w.id, !eq && (own || s.coins >= w.cost))}</div>`; }).join('');
   show(`<h2>${t('workshop.title')}${coins()}</h2><div class="dim" style="margin:0 0 6px">${t('workshop.upgrades')}</div>${ups}<div class="dim" style="margin:10px 0 6px">${t('workshop.weapons')}</div>${weps}<div class="row" style="margin-top:10px">${btn('menu', '‹ ' + t('result.menu'), 's')}</div>`);
 }
+/** Pantalla previa a la partida: qué está pasando, qué hay que lograr y un consejo. */
+export function briefing(id: string, index: number, name: string) {
+  const k = id === 'endless' ? 'endless' : `mission.${id}`, head = index >= 0 ? `<div class="dim" style="margin:0 0 4px">${t('brief.mission', { n: index + 1 })}</div>` : '';
+  const block = (label: string, text: string) => `<div class="dim" style="margin:12px 0 2px;color:#ffb347;opacity:1">${t(label)}</div><p style="margin:0;font-size:15px;max-width:640px">${text}</p>`;
+  show(`${head}<h2><span>${name}</span></h2>${block('brief.situation', t(`${k}.story`))}${block('brief.goal', t(`${k}.goal`))}${block('brief.tip', t(`${k}.tip`))}
+    <div class="row" style="margin-top:20px">${btn('go', t('brief.start'), 'p')}${btn('quit', '‹ ' + t('result.menu'), 's')}</div><div class="dim">${t(TOUCH ? 'fps.help_touch' : 'fps.help_pc')}</div>`);
+}
 export function pauseMenu() { show(`<h2>${t('pause.title')}</h2><div class="col">${btn('resume', t('pause.resume'), 'p')}${btn('restart', t('pause.restart'))}${btn('quit', t('pause.quit'))}</div>`); }
 export function continuePrompt(adFree: boolean) {
   show(`<h2><span>${t('result.down')}</span></h2><p>${t('result.continue_q')}</p><div class="col">${btn('continue', t('result.continue') + (adFree ? '' : ' ' + t('result.ad_tag')), 'p')}${btn('giveup', t('result.no_thanks'))}</div>`);
@@ -62,6 +69,7 @@ export function resultScreen(r: Summary) {
 // Acciones que no dependen de la partida
 on('menu', mainMenu); on('missions', missionsMenu); on('workshop', workshopMenu);
 on('sound', () => { const s = saves.data.settings; s.sound = !s.sound; audio.setOn(s.sound); saves.save(); mainMenu(); });
+on('diff', () => { const s = saves.data.settings, o = ['easy', 'normal', 'hard']; s.difficulty = o[(o.indexOf(s.difficulty ?? 'easy') + 1) % 3]; saves.save(); mainMenu(); });
 on('lang', () => { const s = saves.data.settings; s.lang = nextLang(); setLang(s.lang); saves.save(); mainMenu(); });
 const shop = (fn: (id: string) => boolean) => (id: string) => { if (fn(id)) { saves.save(); audio.coin(); } workshopMenu(); };
 on('buyUp', shop((id) => buyUpgrade(saves.data, UPGRADES.find((u) => u.id === id)!)));

@@ -22,7 +22,7 @@
     "bossEvery": 10
   },
   "fps": {
-    "_nota": "Ajustes solo de la versión en primera persona. Subir/bajar aquí cambia la dificultad sin tocar código.",
+    "_nota": "Ajustes solo de la versión en primera persona. 'levels' multiplica estos valores según la dificultad elegida en el menú.",
     "maxAlive": 8,
     "countScale": 0.55,
     "enemySpeed": 0.8,
@@ -33,6 +33,41 @@
     "hitRadius": 1.35,
     "regenDelay": 4,
     "regenPerSecond": 7,
-    "gateSeconds": 28
+    "gateSeconds": 28,
+    "levels": {
+      "easy": {
+        "count": 0.6,
+        "maxAlive": 5,
+        "speed": 0.8,
+        "damage": 0.5,
+        "bossHp": 0.6,
+        "regen": 1.8,
+        "assist": 5,
+        "assistCone": 0.2,
+        "autoFire": true
+      },
+      "normal": {
+        "count": 1,
+        "maxAlive": 8,
+        "speed": 1,
+        "damage": 1,
+        "bossHp": 1,
+        "regen": 1,
+        "assist": 2,
+        "assistCone": 0.1,
+        "autoFire": false
+      },
+      "hard": {
+        "count": 1.5,
+        "maxAlive": 12,
+        "speed": 1.15,
+        "damage": 1.5,
+        "bossHp": 1.2,
+        "regen": 0.6,
+        "assist": 0,
+        "assistCone": 0,
+        "autoFire": false
+      }
+    }
   }
 }

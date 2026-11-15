@@ -94,5 +94,16 @@
   "result.menu": "Back",
   "result.endless_over": "GAME OVER",
   "result.endless_stats": "Wave {n}  ·  {s} points",
-  "result.record": "New record!"
+  "result.record": "New record!",
+  "fps.sub": "The machines are coming down the street.",
+  "fps.deploy": "DEPLOY",
+  "fps.help_pc": "WASD move · Mouse aim · Click fire · R reload",
+  "fps.help_touch": "Left thumb: move · Right thumb: look · Fires automatically when aiming at a machine",
+  "fps.wave": "WAVE {n}",
+  "fps.left": "MACHINES: {n}",
+  "fps.kills": "DESTROYED: {n}",
+  "fps.reload": "RELOADING",
+  "fps.dead": "YOU FELL",
+  "fps.retry": "RETRY",
+  "fps.incoming": "INCOMING"
 }

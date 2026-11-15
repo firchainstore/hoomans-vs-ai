@@ -94,5 +94,16 @@
   "result.menu": "Volver",
   "result.endless_over": "FIN DE LA PARTIDA",
   "result.endless_stats": "Oleada {n}  ·  {s} puntos",
-  "result.record": "¡Nuevo récord!"
+  "result.record": "¡Nuevo récord!",
+  "fps.sub": "Las máquinas ya vienen por la calle.",
+  "fps.deploy": "ENTRAR",
+  "fps.help_pc": "WASD moverte · Ratón apuntar · Clic disparar · R recargar",
+  "fps.help_touch": "Pulgar izquierdo: moverte · Pulgar derecho: mirar · Dispara solo al apuntar a una máquina",
+  "fps.wave": "OLEADA {n}",
+  "fps.left": "MÁQUINAS: {n}",
+  "fps.kills": "DESTRUIDAS: {n}",
+  "fps.reload": "RECARGANDO",
+  "fps.dead": "HAS CAÍDO",
+  "fps.retry": "REINTENTAR",
+  "fps.incoming": "SE ACERCAN"
 }

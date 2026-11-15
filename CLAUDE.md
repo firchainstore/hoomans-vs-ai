@@ -1,6 +1,7 @@
 # Last Hoomans — guía para quien continúe el proyecto
 
-Shooter top-down 2D de doble stick para Android (Google Play). Autor: desarrollador independiente
+Shooter contra máquinas. Empezó como top-down 2D (Phaser) para Android; desde 2026-11-15 la dirección
+es un shooter 3D en primera persona para web (ver «DIRECCIÓN ACTUAL» abajo). Autor: desarrollador independiente
 (Panamá), primer juego; mercado principal hispanohablante. **Háblale en español y explica las
 decisiones importantes en pocas líneas.** Cuida los tokens: no vuelques archivos grandes ni reescribas lo que funciona.
 
@@ -96,14 +97,18 @@ android/                     Proyecto Capacitor generado (se compila en el PC de
 - **Distribución:** Google Play sigue siendo el objetivo; el mismo build sirve como web (Cloudflare Pages
   gratis alcanza de sobra: el juego pesa ~1,3 MB) para demo y captación. Campaña humana primero.
 
-- **Prototipo 3D (2026-11-14):** el autor considera insuficiente el aspecto del juego 2D aun tras el rehecho
-  ("ni Atari"); lo que esperaba se parece a los juegos 3D de navegador hechos con IA. Se creó
-  `proto3d.html` + `src/proto3d/main.ts` (Three.js: calle en ruinas, niebla, sombras, bloom, robots
-  esqueléticos cromados que se desarman, superviviente con ropa de calle, doble stick). Es una prueba de
-  dirección visual, NO está conectado a misiones/economía. Si el autor lo aprueba, el plan es portar
-  `GameScene` a Three.js reutilizando `src/core` y los JSON sin cambios, y dejar Phaser solo para menús o retirarlo.
-  Riesgo a vigilar: rendimiento 3D en gama baja (bajar sombras/bloom, fusionar geometrías, instancing).
-
+- **DIRECCIÓN ACTUAL (decidida por el autor, 2026-11-15): shooter 3D en PRIMERA PERSONA, web primero**
+  (Cloudflare Pages), Google Play después con calidad ajustada. Vive en `fps.html` + `src/fps/main.ts`
+  (Three.js, un solo archivo por ahora): cruce de calles en ruinas de noche, niebla, sombras, bloom,
+  máquinas esqueléticas cromadas (cuerpo a cuerpo y tiradoras) que se desarman, rifle de caza en pantalla,
+  ojo de TUTELA en el cielo, HUD HTML, ratón+teclado y táctil (stick izquierdo, arrastre derecho, disparo
+  automático al apuntar). Usa `t()` de i18n (claves `fps.*`). `#demo` en la URL activa un bot para capturas.
+  ES UNA REBANADA VERTICAL: oleadas en un escenario; falta conectar `src/core` (misiones, economía,
+  guardado) y construir un escenario por misión. El juego 2D de Phaser (`index.html`, `src/scenes`,
+  `src/game`) queda como versión anterior; no invertir más en su aspecto.
+- Monetización web (conversado, sin decidir): Cloudflare no cobra; opciones = portales con reparto de
+  anuncios (CrazyGames/Poki/itch.io), Whop (única pasarela del autor) con clave verificada por un Worker,
+  o web gratis como escaparate hacia Play. Recomendado empezar por escaparate gratis.
 - **Qué espera realmente el autor (visto en sus 7 enlaces de X, 2026-11-14):** shooters 3D en PRIMERA o
   tercera persona hechos con Claude para navegador de escritorio (arma en pantalla, escenarios industriales
   con luz volumétrica, HUD militar, todo generado por código). No un juego cenital. Cualquier propuesta

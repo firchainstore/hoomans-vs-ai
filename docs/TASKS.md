@@ -23,15 +23,20 @@ Leyenda de complejidad: **[ALTA]** = requiere el modelo más capaz y/o pruebas e
 - [x] Rehecho visual completo (el autor rechazó las formas planas): personajes y máquinas con volumen,
       asfalto con cráteres y escombros, luces aditivas, fogonazos, quemaduras, viñeta, brasas y menú ilustrado.
 
-## Decisión abierta — pasar el juego a 3D
-- [x] Prototipo 3D jugable (`proto3d.html`) para que el autor compare con el 2D.
-- [ ] **[TÚ]** Decidir: ¿seguimos en 3D? Si sí:
-- [ ] **[ALTA]** Portar la escena de juego a Three.js conectándola a `MissionDirector`/`EndlessDirector`,
-      datos JSON, economía y guardado (todo eso se reutiliza). Misiones 1–6 con escenarios 3D propios.
-- [ ] **[ALTA]** Medir rendimiento en un teléfono de gama media-baja; ajustes de calidad (sombras, bloom, resolución).
-- [ ] **[ECON]** Más modelos por código: dron, torreta, mech, jefe; personajes (Marta y otros oficios).
+## AHORA — shooter 3D en primera persona (`fps.html`, `src/fps/main.ts`)
+- [x] Rebanada vertical jugable: calle en ruinas, máquinas esqueléticas (cuerpo a cuerpo y tiradoras), rifle,
+      recarga, tiros a la cabeza, oleadas, HUD, controles de PC y táctiles.
+- [ ] **[TÚ]** Jugarlo en computador y en el teléfono; decir qué se siente bien/mal (velocidad, puntería, dificultad).
+- [ ] **[ALTA]** Partir `src/fps/main.ts` en módulos (mundo, enemigos, arma, controles, hud) antes de que crezca.
+- [ ] **[ALTA]** Conectar `MissionDirector`/`EndlessDirector`, `enemies.json`, `weapons.json`, economía y guardado.
+- [ ] **[ALTA]** Un escenario 3D por misión (desguace, puente, campus, núcleo) y los objetivos (convoy, terminales, jefes).
+- [ ] **[ALTA]** Rendimiento en móvil: niveles de calidad (sombras, bloom, resolución), fusionar geometrías/instancing.
+- [ ] **[ECON]** Modelos por código: dron, torreta, mech, Cazador, TUTELA; más armas en pantalla.
+- [ ] **[ECON]** Sonido (disparo, pasos metálicos, impactos), menú principal y pausa en 3D, textos.
+- [ ] **[ECON]** Publicar en Cloudflare Pages (requiere que el autor conecte su cuenta o lo suba él).
 
-## Pendiente — aspecto visual (prioridad del autor)
+## Versión 2D anterior (Phaser) — congelada
+
 - [ ] **[TÚ]** Decidir si el arte procedural actual basta o se consiguen sprites reales (ver `public/assets/README.md`).
 - [ ] **[ALTA]** Edificios en ruinas, muros y coches CON colisión (hoy el decorado es plano): es lo que
       más falta para que parezca una ciudad. Requiere cuerpos estáticos por misión y que los enemigos los rodeen.
@@ -85,9 +90,7 @@ Leyenda de complejidad: **[ALTA]** = requiere el modelo más capaz y/o pruebas e
 - Las monedas por repetir la misma misión no disminuyen: se puede "farmear" la misión 1.
 
 ## Siguiente paso
-1. **Autor:** `npm install`, `npm run dev` para jugar en el navegador, y luego `BUILD_ANDROID.md`
-   pasos 3–4 para probar en el teléfono. Anotar errores de compilación, fluidez y dificultad.
-2. **Modelo que continúe** (leer antes `CLAUDE.md`): con esas notas, hacer el ajuste de equilibrio
-   y corregir lo que falle en el dispositivo. Después, por orden: botón Atrás de Android → integrar
-   arte/sonido cuando existan → AdMob + UMP → Billing → ficha de Play.
-3. Mientras el autor consigue el arte, las tareas **[ECON]** de calidad se pueden hacer en cualquier orden.
+1. **Autor:** jugar la rebanada 3D (`fps.html`) y dar su opinión; decidir si esta es la dirección definitiva.
+2. **Modelo que continúe** (leer `CLAUDE.md` → «DIRECCIÓN ACTUAL»): modularizar `src/fps`, conectar `src/core`
+   y construir la misión 1 completa en 3D antes de multiplicar contenido. Probar siempre con capturas
+   (`fps.html#demo` en Chromium con SwiftShader) y enseñárselas al autor: el aspecto es su prioridad.

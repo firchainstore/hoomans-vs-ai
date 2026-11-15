@@ -8,6 +8,6 @@ export default defineConfig({
     name: 'inject-game-name',
     transformIndexHtml: (html) => html.split('%GAME_NAME%').join(cfg.name),
   }],
-  build: { target: 'es2020', chunkSizeWarningLimit: 2000, rollupOptions: { input: ['index.html', 'proto3d.html'] } },
+  build: { target: 'es2020', chunkSizeWarningLimit: 2000, rollupOptions: { input: ['index.html', 'fps.html'] } },
   test: { include: ['tests/**/*.test.ts'] },
 });

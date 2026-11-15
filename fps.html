@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>%GAME_NAME%</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #070a10; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
+      font-family: "Arial Narrow", "Roboto Condensed", system-ui, sans-serif; color: #eef2f7; letter-spacing: .12em; text-transform: uppercase; }
+    canvas { display: block; width: 100%; height: 100%; }
+    .fx { position: fixed; inset: 0; pointer-events: none; }
+    #vig { background: radial-gradient(ellipse at center, rgba(0,0,0,0) 50%, rgba(2,4,8,.8) 100%); }
+    #hurt { background: radial-gradient(ellipse at center, rgba(255,30,20,0) 40%, rgba(255,30,20,.6) 100%); opacity: 0; }
+    #cross { position: fixed; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; pointer-events: none; }
+    #cross i { position: absolute; background: #fff; box-shadow: 0 0 3px #000; } #cross.on i { background: #ff3b30; }
+    #cross i:nth-child(1) { left: 10px; top: 0; width: 2px; height: 7px; } #cross i:nth-child(2) { left: 10px; bottom: 0; width: 2px; height: 7px; }
+    #cross i:nth-child(3) { top: 10px; left: 0; height: 2px; width: 7px; } #cross i:nth-child(4) { top: 10px; right: 0; height: 2px; width: 7px; }
+    #top { position: fixed; top: 14px; left: 0; right: 0; text-align: center; font-size: 13px; text-shadow: 0 1px 4px #000; pointer-events: none; }
+    #top b { display: block; font-size: 20px; color: #ffb347; }
+    #vit { position: fixed; left: 22px; bottom: 20px; pointer-events: none; text-shadow: 0 1px 4px #000; font-size: 11px; }
+    #vit b { font-size: 40px; font-weight: 700; letter-spacing: .02em; display: block; line-height: 1; }
+    #bar { width: 180px; height: 5px; background: rgba(255,255,255,.2); margin-top: 6px; } #hp { height: 100%; background: #ffb347; width: 100%; }
+    #ammo { position: fixed; right: 24px; bottom: 20px; text-align: right; pointer-events: none; text-shadow: 0 1px 4px #000; font-size: 11px; }
+    #ammo b { font-size: 44px; font-weight: 700; letter-spacing: .02em; line-height: 1; display: block; }
+    #note { position: fixed; left: 0; right: 0; top: 62%; text-align: center; font-size: 15px; color: #ffb347; pointer-events: none; text-shadow: 0 1px 6px #000; }
+    #menu { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; padding-left: 8vw;
+      background: linear-gradient(90deg, rgba(4,6,10,.92) 0%, rgba(4,6,10,.55) 55%, rgba(4,6,10,0) 100%); }
+    #menu h1 { margin: 0; font-size: clamp(40px, 9vw, 96px); letter-spacing: .06em; line-height: .95; }
+    #menu h1 span { color: #ffb347; } #menu p { margin: 14px 0 26px; font-size: 14px; opacity: .85; max-width: 520px; text-transform: none; letter-spacing: .04em; }
+    #go { font: inherit; font-size: 18px; font-weight: 700; letter-spacing: .2em; padding: 14px 44px; background: #ffb347; color: #14100a; border: 0; cursor: pointer; }
+    #help { margin-top: 22px; font-size: 11px; opacity: .7; }
+    .stick { position: fixed; width: 110px; height: 110px; margin: -55px 0 0 -55px; border-radius: 50%; border: 2px solid rgba(255,255,255,.35); background: rgba(255,255,255,.06); pointer-events: none; display: none; }
+    .stick i { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%; background: rgba(255,255,255,.5); }
+  </style>
+</head>
+<body>
+  <div class="fx" id="vig"></div><div class="fx" id="hurt"></div>
+  <div id="cross"><i></i><i></i><i></i><i></i></div>
+  <div id="top"><b id="wave"></b><span id="left"></span></div>
+  <div id="vit"><b id="hpn">100</b><div id="bar"><div id="hp"></div></div></div>
+  <div id="ammo"><b id="mag">30</b><span id="kills"></span></div>
+  <div id="note"></div>
+  <div class="stick" id="sl"><i></i></div>
+  <div id="menu"><h1 id="title"></h1><p id="sub"></p><button id="go"></button><div id="help"></div></div>
+  <script type="module" src="/src/fps/main.ts"></script>
+</body>
+</html>

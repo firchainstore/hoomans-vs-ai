@@ -12,7 +12,8 @@
     "smoke": "node scripts/smoke.mjs",
     "sync:name": "node scripts/sync-name.mjs",
     "android:sync": "npm run build && npm run sync:name && cap sync android",
-    "android:open": "cap open android"
+    "android:open": "cap open android",
+    "smoke:fps": "node scripts/smoke-fps.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.2",

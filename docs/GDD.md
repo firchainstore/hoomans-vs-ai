@@ -1,5 +1,9 @@
 # GDD — Last Hoomans (v1)
 
+> **Formato actual: shooter 3D en primera persona** (`fps.html`). Misiones, enemigos, armas y economía
+> de este documento siguen vigentes: la versión 3D lee los mismos datos. Donde diga px, 25 px = 1 m.
+> En 3D el dron vuela y embiste, el sintético y el mech disparan, la torreta es fija y TUTELA es un núcleo flotante.
+
 ## Visión
 Shooter cenital de doble stick, partidas de 2–4 minutos, para móvil en horizontal. La humanidad
 perdió: TUTELA, una IA creada por la empresa Nimbora para "proteger a las personas de sí mismas",

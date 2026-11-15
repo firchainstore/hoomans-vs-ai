@@ -19,6 +19,8 @@ export interface EnemyDef {
 export interface WeaponDef {
   id: string; nameKey: string; descKey: string; cost: number; damage: number; fireRate: number;
   bulletSpeed: number; spreadDeg: number; pellets: number; pierce: number; range: number; color: string;
+  /** Balas por cargador (solo versión en primera persona). */
+  mag?: number;
 }
 export interface UpgradeDef {
   id: string; nameKey: string; stat: 'damageMult' | 'maxHp' | 'speedMult';

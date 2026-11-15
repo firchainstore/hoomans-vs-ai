@@ -23,17 +23,23 @@ Leyenda de complejidad: **[ALTA]** = requiere el modelo más capaz y/o pruebas e
 - [x] Rehecho visual completo (el autor rechazó las formas planas): personajes y máquinas con volumen,
       asfalto con cráteres y escombros, luces aditivas, fogonazos, quemaduras, viñeta, brasas y menú ilustrado.
 
-## AHORA — shooter 3D en primera persona (`fps.html`, `src/fps/main.ts`)
-- [x] Rebanada vertical jugable: calle en ruinas, máquinas esqueléticas (cuerpo a cuerpo y tiradoras), rifle,
-      recarga, tiros a la cabeza, oleadas, HUD, controles de PC y táctiles.
-- [ ] **[TÚ]** Jugarlo en computador y en el teléfono; decir qué se siente bien/mal (velocidad, puntería, dificultad).
-- [ ] **[ALTA]** Partir `src/fps/main.ts` en módulos (mundo, enemigos, arma, controles, hud) antes de que crezca.
-- [ ] **[ALTA]** Conectar `MissionDirector`/`EndlessDirector`, `enemies.json`, `weapons.json`, economía y guardado.
-- [ ] **[ALTA]** Un escenario 3D por misión (desguace, puente, campus, núcleo) y los objetivos (convoy, terminales, jefes).
-- [ ] **[ALTA]** Rendimiento en móvil: niveles de calidad (sombras, bloom, resolución), fusionar geometrías/instancing.
-- [ ] **[ECON]** Modelos por código: dron, torreta, mech, Cazador, TUTELA; más armas en pantalla.
-- [ ] **[ECON]** Sonido (disparo, pasos metálicos, impactos), menú principal y pausa en 3D, textos.
-- [ ] **[ECON]** Publicar en Cloudflare Pages (requiere que el autor conecte su cuenta o lo suba él).
+## AHORA — shooter 3D en primera persona (`fps.html`, `src/fps/`)
+- [x] Gráficos aprobados por el autor: calles en ruinas, máquinas endoesqueleto, rifle en pantalla.
+- [x] Código dividido en módulos (gfx, models, level, audio, ui, main).
+- [x] Las 6 misiones y el modo Oleadas conectados a `src/core` y a los JSON: objetivos (eliminar, sobrevivir,
+      convoy, hackear, jefes), monedas, mejoras, armas, guardado, continuar/duplicar con anuncio simulado.
+- [x] Seis máquinas modeladas: dron, sintético, torreta, mech, Cazador Alfa, TUTELA.
+- [x] Orientación: radar, flecha a la amenaza, marcador del objetivo con distancia, haz rojo donde aparecen.
+- [x] Sonido sintetizado y controles con flechas del teclado.
+- [ ] **[TÚ]** Jugar las 6 misiones y anotar dificultad, velocidad y puntería (el equilibrio viene del 2D y solo lo validó un bot invulnerable).
+- [ ] **[ALTA]** Ajuste de equilibrio para primera persona (vida de jefes, daño, cantidad de máquinas).
+- [ ] **[ALTA]** Rendimiento en móvil: niveles de calidad (sombras, bloom, resolución); medir en teléfono real.
+- [ ] **[ALTA]** Escenarios con identidad por misión (desguace con montañas de chatarra, puente con cables y agua, campus, sala del núcleo). Hoy todos son la misma ciudad con distinto tamaño, semilla y tono.
+- [ ] **[ECON]** Pistas del tutorial en la misión 1 (las claves `hint.*` hablan de sticks: reescribir para PC/táctil).
+- [ ] **[ECON]** Arma distinta en pantalla por cada arma (hoy todas muestran el rifle) y perforación de la Lanza de Riel.
+- [ ] **[ECON]** Tienda (compras) y selector de personaje en los menús FPS; botón de recarga táctil.
+- [ ] **[ECON]** Sonido real (grabaciones) y música; el actual es sintetizado.
+- [ ] **[ECON]** Publicar en Cloudflare Pages (el autor debe conectar su cuenta o subir `dist/`).
 
 ## Versión 2D anterior (Phaser) — congelada
 
@@ -90,7 +96,7 @@ Leyenda de complejidad: **[ALTA]** = requiere el modelo más capaz y/o pruebas e
 - Las monedas por repetir la misma misión no disminuyen: se puede "farmear" la misión 1.
 
 ## Siguiente paso
-1. **Autor:** jugar la rebanada 3D (`fps.html`) y dar su opinión; decidir si esta es la dirección definitiva.
-2. **Modelo que continúe** (leer `CLAUDE.md` → «DIRECCIÓN ACTUAL»): modularizar `src/fps`, conectar `src/core`
-   y construir la misión 1 completa en 3D antes de multiplicar contenido. Probar siempre con capturas
-   (`fps.html#demo` en Chromium con SwiftShader) y enseñárselas al autor: el aspecto es su prioridad.
+1. **Autor:** jugar las 6 misiones en `fps.html` y anotar qué es fácil, difícil, lento o confuso.
+2. **Modelo que continúe** (leer `CLAUDE.md` → «DIRECCIÓN ACTUAL»): ajustar el equilibrio con esas notas
+   (solo JSON), después dar identidad propia al escenario de cada misión en `src/fps/level.ts`.
+   Enseñar siempre capturas al autor (`scripts/shots/fps_*.png` tras `npm run smoke:fps`): el aspecto es su prioridad.

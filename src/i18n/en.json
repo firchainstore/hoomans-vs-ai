@@ -95,18 +95,10 @@
   "result.endless_over": "GAME OVER",
   "result.endless_stats": "Wave {n}  ·  {s} points",
   "result.record": "New record!",
-  "fps.sub": "Hold the crossroads. Machines arrive down the street marked by the red light; the radar and the arrow show where they are.",
-  "fps.deploy": "DEPLOY",
   "fps.help_pc": "WASD move · Mouse aim · Click fire · R reload",
   "fps.help_touch": "Left thumb: move · Right thumb: look · Fires automatically when aiming at a machine",
-  "fps.wave": "WAVE {n}",
-  "fps.left": "MACHINES: {n}",
-  "fps.kills": "DESTROYED: {n}",
   "fps.reload": "RELOADING",
-  "fps.dead": "YOU FELL",
-  "fps.retry": "RETRY",
-  "fps.dir0": "COMING FROM THE NORTH",
-  "fps.dir1": "COMING FROM THE EAST",
-  "fps.dir2": "COMING FROM THE SOUTH",
-  "fps.dir3": "COMING FROM THE WEST"
+  "fps.hacking": "HACKING {p}%",
+  "fps.go": "GO TO THE TERMINAL",
+  "fps.headshot": "HEADSHOT!"
 }

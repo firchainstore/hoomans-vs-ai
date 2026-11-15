@@ -98,14 +98,21 @@ android/                     Proyecto Capacitor generado (se compila en el PC de
   gratis alcanza de sobra: el juego pesa ~1,3 MB) para demo y captación. Campaña humana primero.
 
 - **DIRECCIÓN ACTUAL (decidida por el autor, 2026-11-15): shooter 3D en PRIMERA PERSONA, web primero**
-  (Cloudflare Pages), Google Play después con calidad ajustada. Vive en `fps.html` + `src/fps/main.ts`
-  (Three.js, un solo archivo por ahora): cruce de calles en ruinas de noche, niebla, sombras, bloom,
-  máquinas esqueléticas cromadas (cuerpo a cuerpo y tiradoras) que se desarman, rifle de caza en pantalla,
-  ojo de TUTELA en el cielo, HUD HTML, ratón+teclado y táctil (stick izquierdo, arrastre derecho, disparo
-  automático al apuntar). Usa `t()` de i18n (claves `fps.*`). `#demo` en la URL activa un bot para capturas.
-  ES UNA REBANADA VERTICAL: oleadas en un escenario; falta conectar `src/core` (misiones, economía,
-  guardado) y construir un escenario por misión. El juego 2D de Phaser (`index.html`, `src/scenes`,
-  `src/game`) queda como versión anterior; no invertir más en su aspecto.
+  (Cloudflare Pages), Google Play después con calidad ajustada. El autor quedó "bastante contento con los
+  gráficos". Punto de entrada `fps.html`; código en `src/fps/` (Three.js):
+  - `gfx.ts` render, cámara, luces, cielo, ojo de TUTELA, utilidades · `models.ts` máquinas por código
+    (segmentos fusionados por material; el aspecto sale de `EnemyDef.shape`), convoy, terminal, arma en pantalla
+  - `level.ts` genera el escenario de cada misión (tamaño = `arena` del JSON, semilla = id) + colisiones
+  - `audio.ts` sonido sintetizado · `ui.ts` menús HTML (menú, misiones, taller, pausa, resultado)
+  - `main.ts` bucle: jugador, disparo hitscan, IA de enemigos leída de `enemies.json`, objetivos, HUD, bot de pruebas
+  Reutiliza SIN CAMBIOS `src/core` (MissionDirector, EndlessDirector, Economy, SaveManager), los JSON de
+  `src/data`, i18n y `src/services`. Conversión de unidades: los JSON están en px del 2D, **25 px = 1 m**
+  (`U` en main.ts); alcances ×1,6. `weapons.json` tiene `mag` (balas por cargador, solo FPS).
+  Controles: WASD o flechas + ratón (clic dispara, R recarga, Esc/P pausa); táctil: stick izquierdo,
+  arrastre derecho para mirar, disparo automático al apuntar a una máquina.
+  Pruebas: `npm run smoke:fps` (arranca todo) y `npm run smoke:fps -- --full` (un bot gana las 6 misiones).
+  El juego 2D de Phaser (`index.html`, `src/scenes`, `src/game`) queda congelado; no invertir más en él.
+  Pendiente visible: tienda de compras en la versión FPS, pistas del tutorial, escenarios más distintos por misión.
 - Monetización web (conversado, sin decidir): Cloudflare no cobra; opciones = portales con reparto de
   anuncios (CrazyGames/Poki/itch.io), Whop (única pasarela del autor) con clave verificada por un Worker,
   o web gratis como escaparate hacia Play. Recomendado empezar por escaparate gratis.

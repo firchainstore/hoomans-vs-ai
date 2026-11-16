@@ -121,6 +121,10 @@ android/                     Proyecto Capacitor generado (se compila en el PC de
   flechas y panel táctil y dos veces dijo que la misión 2 era demasiado difícil: Fácil debe ser realmente fácil.
   Recompensas en partida (`balance.json → fps.drops`): las máquinas sueltan botiquín, escudo, sobrecarga (daño ×2)
   o un arma prestada con munición limitada; rachas de 3+ bajas dan monedas extra. Pedido por el autor.
+  El autor no entendía qué daban las recompensas ni veía cambiar el arma: por eso cada recogida muestra un cartel
+  explicado (`banner`), cada arma tiene su modelo en pantalla (`makeViewModel` → `setWeapon(id, nivel)`) y el arma
+  en mano sube a nivel 2 y 3 durante la misión (`fps.weaponLevels`) con piezas visibles. Toda mejora debe VERSE.
+  También creyó que el juego era 2D porque no giraba la vista: ← → giran, ↑ ↓ avanzan, A/D lateral, Espacio salta.
   Sonido: `audio.ts` con reverberación y compresor; el autor rechazó el primer ambiente (ruido filtrado = «radio con
   interferencia»): nada de siseo continuo. Sigue siendo sintetizado; lo ideal son grabaciones con licencia.
   Dificultad FPS: bloque `fps` de `balance.json` (cantidad, velocidad, daño, vida que se regenera, radio de

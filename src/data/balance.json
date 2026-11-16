@@ -97,6 +97,16 @@
           "amount": 50
         }
       ]
+    },
+    "weaponLevels": {
+      "_nota": "El arma en mano sube de nivel durante la misión. kills = bajas acumuladas para nivel 2 y 3 (un jefe cuenta 5).",
+      "kills": [
+        6,
+        16
+      ],
+      "damagePerLevel": 0.35,
+      "fireRatePerLevel": 0.15,
+      "magPerLevel": 0.25
     }
   }
 }

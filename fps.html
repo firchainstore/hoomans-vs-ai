@@ -22,6 +22,9 @@
     #ammo { right: 24px; bottom: 18px; text-align: right; font-size: 11px; } #ammo b { font-size: 44px; font-weight: 700; letter-spacing: .02em; line-height: 1; display: block; }
     #coins { right: 24px; top: 14px; font-size: 16px; color: #ffb347; }
     #note { left: 0; right: 0; top: 62%; text-align: center; font-size: 15px; color: #ffb347; }
+    #banner { left: 50%; top: 20%; transform: translateX(-50%); min-width: 300px; max-width: 78%; padding: 10px 18px; background: rgba(8,12,20,.82); border-left: 5px solid #35e0ff; text-align: left; opacity: 0; transition: opacity .25s; }
+    #banner b { display: block; font-size: 19px; } #banner span { display: block; font-size: 13px; text-transform: none; letter-spacing: .03em; margin-top: 3px; opacity: .92; }
+    #xp { width: 120px; height: 4px; background: rgba(255,255,255,.2); margin: 5px 0 0 auto; } #xp i { display: block; height: 100%; background: #35e0ff; width: 0; }
     #radar { left: 16px; top: 14px; width: 120px; height: 120px; }
     #arrow { left: 50%; top: 50%; width: 0; height: 0; margin: -11px 0 0 -13px; border-left: 13px solid transparent; border-right: 13px solid transparent; border-bottom: 22px solid #ff3b30; filter: drop-shadow(0 0 6px #ff3b30); display: none; }
     #wp { left: 0; top: 0; display: none; text-align: center; font-size: 12px; color: #35e0ff; width: 80px; margin: -14px 0 0 -40px; }
@@ -54,7 +57,8 @@
     <div class="hud" id="cross"><i></i><i></i><i></i><i></i></div>
     <div class="hud" id="top"><b id="obj"></b><div id="bar2"><i></i></div><span id="sub2"></span></div>
     <div class="hud" id="vit"><b id="hpn">100</b><div id="bar"><div id="hp"></div></div><div id="buffs" style="margin-top:6px;color:#35e0ff"></div></div>
-    <div class="hud" id="ammo"><b id="mag">30</b><span id="wname"></span></div>
+    <div class="hud" id="ammo"><b id="mag">30</b><span id="wname"></span><div id="xp"><i></i></div><span id="wlvl" style="color:#35e0ff"></span></div>
+    <div class="hud" id="banner"><b></b><span></span></div>
     <div class="hud" id="coins"></div><div class="hud" id="note"></div>
     <canvas class="hud" id="radar" width="120" height="120"></canvas><div class="hud" id="arrow"></div><div class="hud" id="wp"><i></i><span></span></div>
     <button id="pauseBtn">II</button><button id="crouchBtn">▼</button>

@@ -140,20 +140,53 @@ export function makeTerminal(parent: THREE.Object3D, radius: number) {
   return { g, done() { const c = new THREE.Color(0xffb347); screen.color.copy(c).multiplyScalar(2.2); ringM.color.copy(c); (beam.material as THREE.MeshBasicMaterial).color.copy(c).multiplyScalar(1.5); light.color.copy(c); } };
 }
 
-/** Arma en primera persona: rifle de caza con culata de madera y las manos del superviviente. */
+/**
+ * Armas en primera persona. Cada arma tiene su modelo y dos juegos de piezas extra que aparecen al subir
+ * de nivel (2 y 3), para que la mejora SE VEA. Las manos del superviviente son comunes.
+ */
 export function makeViewModel(cam: THREE.Camera) {
   const view = new THREE.Group(); view.scale.setScalar(0.72); cam.add(view);
-  const wood = M(0x6b4424, 0.6), sleeve = M(0x4a6079, 0.9), skin = M(0xc99b7a, 0.8), steel = new THREE.MeshStandardMaterial({ color: 0x1c1e22, metalness: 0.9, roughness: 0.35 });
-  const vb = (w: number, h: number, d: number, m: THREE.Material, x: number, y: number, z: number, rx = 0) => { const o = box(w, h, d, m, x, y, z, view); o.castShadow = o.receiveShadow = false; o.rotation.x = rx; return o; };
-  vb(0.05, 0.07, 0.42, wood, 0, -0.01, 0.12, -0.05); vb(0.055, 0.1, 0.2, wood, 0, -0.045, 0.34, -0.25); vb(0.045, 0.06, 0.3, steel, 0, 0.012, -0.16); vb(0.05, 0.05, 0.26, wood, 0, -0.03, -0.3);
-  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.015, 0.62, 10), steel); barrel.rotation.x = H; barrel.position.set(0, 0.02, -0.55); view.add(barrel);
-  vb(0.012, 0.03, 0.012, steel, 0, 0.045, -0.84); vb(0.03, 0.035, 0.05, steel, 0, 0.05, -0.1); vb(0.03, 0.1, 0.06, steel, 0, -0.08, -0.14);
-  vb(0.085, 0.085, 0.3, sleeve, 0.02, -0.07, 0.2, 0.3); vb(0.07, 0.075, 0.09, skin, 0.01, -0.05, 0.04);
-  vb(0.085, 0.085, 0.34, sleeve, -0.11, -0.1, -0.16, -0.25).rotation.y = -0.5; vb(0.075, 0.07, 0.1, skin, -0.02, -0.06, -0.32);
+  const wood = M(0x6b4424, 0.6), sleeve = M(0x4a6079, 0.9), skin = M(0xc99b7a, 0.8), steel = new THREE.MeshStandardMaterial({ color: 0x1c1e22, metalness: 0.9, roughness: 0.35 }), grey = new THREE.MeshStandardMaterial({ color: 0x5a606c, metalness: 0.9, roughness: 0.3 });
+  const amber = glowMat(0xffb347, 3), cyan = glowMat(0x35e0ff, 3.5), red = glowMat(0xff3020, 4);
+  const vb = (p: THREE.Object3D, w: number, h: number, d: number, m: THREE.Material, x: number, y: number, z: number, rx = 0) => { const o = box(w, h, d, m, x, y, z, p); o.castShadow = o.receiveShadow = false; o.rotation.x = rx; return o; };
+  const tube = (p: THREE.Object3D, r: number, len: number, m: THREE.Material, x: number, y: number, z: number) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 12), m); o.rotation.x = H; o.position.set(x, y, z); p.add(o); return o; };
+  const ring = (p: THREE.Object3D, R: number, m: THREE.Material, z: number) => { const o = new THREE.Mesh(new THREE.TorusGeometry(R, 0.008, 6, 16), m); o.position.set(0, 0.02, z); p.add(o); };
+  vb(view, 0.085, 0.085, 0.3, sleeve, 0.02, -0.07, 0.2, 0.3); vb(view, 0.07, 0.075, 0.09, skin, 0.01, -0.05, 0.04);
+  vb(view, 0.085, 0.085, 0.34, sleeve, -0.11, -0.1, -0.16, -0.25).rotation.y = -0.5; vb(view, 0.075, 0.07, 0.1, skin, -0.02, -0.06, -0.3);
+  const guns: Record<string, { g: THREE.Group; lv: THREE.Group[]; muzzle: number }> = {};
+  const gun = (id: string, muzzle: number, build: (g: THREE.Group, l2: THREE.Group, l3: THREE.Group) => void) => { const g = new THREE.Group(), l2 = new THREE.Group(), l3 = new THREE.Group(); g.add(l2, l3); build(g, l2, l3); g.visible = false; view.add(g); guns[id] = { g, lv: [l2, l3], muzzle }; };
+  gun('blaster', -0.9, (g, l2, l3) => { // rifle de caza
+    vb(g, 0.05, 0.07, 0.42, wood, 0, -0.01, 0.12, -0.05); vb(g, 0.055, 0.1, 0.2, wood, 0, -0.045, 0.34, -0.25); vb(g, 0.045, 0.06, 0.3, steel, 0, 0.012, -0.16); vb(g, 0.05, 0.05, 0.26, wood, 0, -0.03, -0.3);
+    tube(g, 0.014, 0.62, steel, 0, 0.02, -0.55); vb(g, 0.012, 0.03, 0.012, steel, 0, 0.045, -0.84); vb(g, 0.03, 0.1, 0.06, steel, 0, -0.08, -0.14);
+    tube(l2, 0.024, 0.24, steel, 0, 0.082, -0.14); vb(l2, 0.02, 0.03, 0.03, steel, 0, 0.055, -0.07); vb(l2, 0.02, 0.03, 0.03, steel, 0, 0.055, -0.21); tube(l2, 0.02, 0.012, cyan, 0, 0.082, -0.262); // mira telescópica
+    vb(l3, 0.04, 0.045, 0.1, grey, 0, 0.02, -0.86); vb(l3, 0.056, 0.008, 0.24, amber, 0, -0.002, -0.3); vb(l3, 0.034, 0.16, 0.07, steel, 0, -0.12, -0.14); // freno de boca, franja y cargador largo
+  });
+  gun('scatter', -0.72, (g, l2, l3) => { // escopeta de dos cañones
+    vb(g, 0.05, 0.08, 0.4, wood, 0, -0.015, 0.14, -0.08); vb(g, 0.06, 0.07, 0.2, steel, 0, 0.01, -0.12); vb(g, 0.07, 0.05, 0.22, wood, 0, -0.035, -0.34);
+    tube(g, 0.019, 0.56, steel, -0.02, 0.022, -0.44); tube(g, 0.019, 0.56, steel, 0.02, 0.022, -0.44);
+    for (let k = 0; k < 4; k++) tube(l2, 0.012, 0.05, red, 0.045, 0.01, -0.06 - k * 0.035).rotation.set(0, 0, 0); // cartuchos al costado
+    vb(l3, 0.075, 0.03, 0.3, grey, 0, 0.05, -0.5); for (let k = 0; k < 5; k++) vb(l3, 0.078, 0.008, 0.02, amber, 0, 0.066, -0.38 - k * 0.055); // protector térmico
+  });
+  gun('smg', -0.6, (g, l2, l3) => { // subfusil compacto
+    vb(g, 0.055, 0.085, 0.36, steel, 0, 0.005, -0.1); vb(g, 0.035, 0.22, 0.055, grey, 0, -0.13, -0.12, 0.12); vb(g, 0.04, 0.1, 0.05, steel, 0, -0.07, 0.04, -0.3);
+    tube(g, 0.016, 0.22, steel, 0, 0.015, -0.38); vb(g, 0.012, 0.012, 0.3, grey, -0.02, 0.02, 0.2); vb(g, 0.012, 0.012, 0.3, grey, 0.02, 0.02, 0.2); vb(g, 0.06, 0.07, 0.02, grey, 0, 0.0, 0.35);
+    vb(l2, 0.03, 0.045, 0.06, steel, 0, 0.07, -0.08); vb(l2, 0.012, 0.012, 0.004, red, 0, 0.075, -0.112); // punto rojo
+    tube(l3, 0.028, 0.24, steel, 0, 0.015, -0.58); vb(l3, 0.058, 0.008, 0.3, cyan, 0, 0.05, -0.1); // silenciador y franja
+  });
+  gun('rail', -1.02, (g, l2, l3) => { // lanza de riel
+    vb(g, 0.06, 0.075, 0.5, steel, 0, 0.005, -0.12); vb(g, 0.05, 0.09, 0.26, grey, 0, -0.03, 0.26, -0.15);
+    vb(g, 0.014, 0.034, 0.74, grey, -0.024, 0.02, -0.66); vb(g, 0.014, 0.034, 0.74, grey, 0.024, 0.02, -0.66);
+    for (const z of [-0.45, -0.75]) ring(g, 0.045, grey, z);
+    for (const z of [-0.4, -0.55, -0.7, -0.85]) ring(l2, 0.046, cyan, z); // bobinas encendidas
+    for (const z of [-0.32, -0.62, -0.92]) ring(l3, 0.06, cyan, z); vb(l3, 0.008, 0.008, 0.7, cyan, 0, 0.02, -0.66); vb(l3, 0.07, 0.03, 0.2, steel, 0, 0.06, -0.1);
+  });
   const flash = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.34), new THREE.MeshBasicMaterial({ transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, map: canvasTex(64, (c) => {
     const g = c.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, '#fff'); g.addColorStop(0.3, 'rgba(255,190,90,.9)'); g.addColorStop(1, 'rgba(255,120,30,0)'); c.fillStyle = g; c.fillRect(0, 0, 64, 64);
     c.strokeStyle = 'rgba(255,220,150,.9)'; c.lineWidth = 3; for (let i = 0; i < 6; i++) { c.beginPath(); c.moveTo(32, 32); c.lineTo(32 + Math.cos(i * 1.05) * 30, 32 + Math.sin(i * 1.05) * 30); c.stroke(); }
-  }) })); flash.position.set(0, 0.02, -0.9); flash.visible = false; view.add(flash);
+  }) })); flash.visible = false; view.add(flash);
   const light = new THREE.PointLight(0xffb060, 0, 18, 2); cam.add(light); light.position.set(0.2, -0.1, -1);
-  return { view, flash, light };
+  /** Muestra el modelo del arma indicada con las piezas de su nivel (1 a 3). */
+  const setWeapon = (id: string, level: number) => { for (const k in guns) guns[k].g.visible = false; const w = guns[id] ?? guns.blaster; w.g.visible = true; w.lv[0].visible = level >= 2; w.lv[1].visible = level >= 3; flash.position.set(0, 0.02, w.muzzle); flash.scale.setScalar(1 + (level - 1) * 0.25); };
+  setWeapon('blaster', 1);
+  return { view, flash, light, setWeapon };
 }

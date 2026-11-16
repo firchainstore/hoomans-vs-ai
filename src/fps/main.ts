@@ -22,14 +22,19 @@ let D: Level = F.levels.easy; // multiplicadores del nivel de dificultad elegido
 setLang(saves.data.settings.lang); audio.setOn(saves.data.settings.sound);
 
 interface Enemy { def: EnemyDef; rig: Rig; hp: number; maxHp: number; x: number; z: number; alive: boolean; cds: number[]; dashCd: number; dashT: number; vx: number; vz: number; summonCd: number; touchCd: number; phase: number; toConvoy: boolean; retreat: number }
-const P = { x: 0, z: 0, yaw: 0, pitch: 0, hp: 100, maxHp: 100, speed: 5.4, mag: 30, fireCd: 0, reload: 0, recoil: 0, bob: 0, stepT: 0, lastHurt: 0, crouch: 0, shield: 0, power: 0 };
+const P = { x: 0, z: 0, yaw: 0, pitch: 0, hp: 100, maxHp: 100, speed: 5.4, mag: 30, fireCd: 0, reload: 0, recoil: 0, bob: 0, stepT: 0, lastHurt: 0, crouch: 0, shield: 0, power: 0, y: 0, vy: 0 };
 const G = { id: 'endless', mission: undefined as MissionDef | undefined, arena: BALANCE.endless.arena as { w: number; h: number; tint: string; theme?: string }, director: null as Director | null,
   playing: false, paused: false, ended: false, continued: false, coins: 0, dmgMult: 1, weapon: weaponDef('blaster') as WeaponDef, bot: false, speed: 1, lastCoins: 0 };
 const enemies: Enemy[] = [];
 let boss: Enemy | undefined, shake = 0, noteT = 0, time = 0, hudT = 0;
 let convoy: { g: THREE.Group; x: number; z: number; hp: number; max: number; t: number; fx: number; fz: number; tx: number; tz: number; speed: number } | undefined;
 let terminals: { x: number; z: number; r: number; finished: boolean; done(): void }[] = [];
-const { view, flash, light: muzzle } = makeViewModel(camera);
+const { view, flash, light: muzzle, setWeapon } = makeViewModel(camera);
+const WL = F.weaponLevels;
+let wLevel = 1, wXp = 0, bannerT = 0;
+const magSize = (): number => Math.round((G.weapon.mag ?? 30) * (1 + WL.magPerLevel * (wLevel - 1)));
+/** Cartel grande y explicado: recompensas y subidas de nivel. */
+function banner(title: string, sub: string, color: number) { const b = $('banner'); b.firstElementChild!.textContent = title; b.lastElementChild!.textContent = sub; b.style.borderLeftColor = '#' + color.toString(16).padStart(6, '0'); b.style.opacity = '1'; bannerT = 4.5; }
 
 // ---------- Efectos (pools: nada se crea durante la partida salvo los enemigos) ----------
 const tracers = Array.from({ length: 8 }, () => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 1), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 })); m.visible = false; scene.add(m); return { m, life: 0 }; });
@@ -65,13 +70,14 @@ function drop(e: Enemy) {
   p.type = type; p.x = e.x; p.z = e.z; p.life = DR.seconds; p.g.position.set(e.x, 0.95, e.z); p.g.visible = true;
 }
 function collect(type: string) {
-  const d = DR.table.find((x) => x.type === type)!; audio.pickup();
-  if (type === 'health') { P.hp = Math.min(P.maxHp, P.hp + d.amount!); note(t('pick.health', { n: d.amount! })); }
-  else if (type === 'shield') { P.shield = Math.min(100, P.shield + d.amount!); note(t('pick.shield', { n: d.amount! })); }
-  else if (type === 'power') { P.power = d.seconds!; note(t('pick.power')); }
-  else { // arma prestada: mejor que la tuya, con munición contada
+  const d = DR.table.find((x) => x.type === type)!, col = PICK_COLORS[type]; audio.pickup();
+  if (type === 'health') { P.hp = Math.min(P.maxHp, P.hp + d.amount!); banner(t('pick.health'), t('pick.health.desc', { n: d.amount! }), col); }
+  else if (type === 'shield') { P.shield = Math.min(100, P.shield + d.amount!); banner(t('pick.shield'), t('pick.shield.desc', { n: d.amount! }), col); }
+  else if (type === 'power') { P.power = d.seconds!; banner(t('pick.power'), t('pick.power.desc', { s: d.seconds! }), col); }
+  else { // arma prestada: distinta de la tuya, con munición contada
     const opts = WEAPONS.filter((w) => w.id !== baseWeapon.id && w.id !== G.weapon.id), w = opts[Math.floor(Math.random() * opts.length)] ?? baseWeapon;
-    G.weapon = w; tempRounds = (w.mag ?? 30) * d.mags!; P.mag = w.mag ?? 30; P.reload = 0; $('wname').textContent = t(w.nameKey); note(t('pick.weapon', { name: t(w.nameKey) }), 3.5);
+    G.weapon = w; tempRounds = magSize() * d.mags!; P.mag = magSize(); P.reload = 0; $('wname').textContent = t(w.nameKey); setWeapon(w.id, wLevel);
+    banner(t('pick.weapon'), t('pick.weapon.desc', { name: t(w.nameKey), desc: t(w.descKey), n: tempRounds }), col);
   }
 }
 function note(text: string, secs = 2.4) { $('note').textContent = text; noteT = secs; }
@@ -97,7 +103,8 @@ function start(id: string) {
   G.director = G.mission ? new MissionDirector(G.mission) : new EndlessDirector(ENEMIES, BALANCE.endless);
   const stats = playerStats(s, UPGRADES, BALANCE.player);
   G.weapon = baseWeapon = weaponDef(s.equipped); G.dmgMult = stats.damageMult; G.coins = 0; G.ended = G.continued = G.paused = false;
-  Object.assign(P, { x: st.x, z: st.z, yaw: convoy ? -Math.PI / 2 : 0, pitch: 0, hp: stats.maxHp, maxHp: stats.maxHp, speed: 5.4 * (stats.speed / BALANCE.player.speed), mag: G.weapon.mag ?? 30, fireCd: 0, reload: 0, recoil: 0, lastHurt: -99, shield: 0, power: 0 });
+  Object.assign(P, { x: st.x, z: st.z, yaw: convoy ? -Math.PI / 2 : 0, pitch: 0, hp: stats.maxHp, maxHp: stats.maxHp, speed: 5.4 * (stats.speed / BALANCE.player.speed), mag: magSize(), fireCd: 0, reload: 0, recoil: 0, lastHurt: -99, shield: 0, power: 0, y: 0, vy: 0 });
+  wLevel = 1; wXp = 0; setWeapon(G.weapon.id, 1); P.mag = magSize();
   $('wname').textContent = t(G.weapon.nameKey); $('hudAll').style.display = 'block'; $('pauseBtn').style.display = $('crouchBtn').style.display = TOUCH ? 'block' : 'none';
   audio.unlock(); camera.position.set(P.x, 1.65, P.z); camera.rotation.set(0, P.yaw, 0);
   if (G.bot) return begin();
@@ -146,6 +153,8 @@ function kill(e: Enemy, dir: THREE.Vector3) {
   for (const part of e.rig.pieces) { scene.attach(part); debris.push({ m: part, v: new THREE.Vector3(dir.x * 4 + rnd(-2, 2), rnd(1.5, big ? 8 : 5), dir.z * 4 + rnd(-2, 2)), w: new THREE.Vector3(rnd(-7, 7), rnd(-7, 7), rnd(-7, 7)), life: 4 }); }
   scene.remove(e.rig.root); burst(e.x, e.rig.baseY + e.rig.h * 0.5, e.z, big ? 80 : 30, big ? 8 : 5); audio.boom(big); if (big) shake = 0.6;
   G.coins += e.def.coins; G.director!.onEnemyKilled(e.def.id); if (boss === e) boss = undefined; drop(e);
+  wXp += e.def.boss ? 5 : 1;
+  if (wLevel < 3 && wXp >= WL.kills[wLevel - 1]) { wLevel++; setWeapon(G.weapon.id, wLevel); P.mag = magSize(); P.reload = 0; audio.pickup(); banner(t('fps.levelup', { n: wLevel }), t('fps.levelup.desc', { d: Math.round(WL.damagePerLevel * (wLevel - 1) * 100) }), 0x35e0ff); }
   streak = streakT > 0 ? streak + 1 : 1; streakT = DR.streakWindow;
   if (streak >= 3) { G.coins += streak; note(t('fps.streak', { n: streak, c: streak }), 1.8); audio.streak(); }
 }
@@ -170,19 +179,19 @@ function trace(o: THREE.Vector3, d: THREE.Vector3, max: number) {
 const aimDir = (yo = 0, po = 0) => { const y = P.yaw + yo, p = P.pitch + po; return dir.set(-Math.sin(y) * Math.cos(p), Math.sin(p), -Math.cos(y) * Math.cos(p)); };
 function fire() {
   const w = G.weapon, sp = THREE.MathUtils.degToRad(w.spreadDeg), max = Math.max(w.range * U * 2.5, 18), heavy = w.pellets > 1 || w.damage > 20;
-  P.fireCd = 1 / w.fireRate; P.mag--; P.recoil = heavy ? 1.8 : 1; shake = Math.max(shake, heavy ? 0.12 : 0.05); flash.visible = true; flash.rotation.z = rnd(0, 6.28); muzzle.intensity = 9; audio.shot(heavy);
+  P.fireCd = 1 / (w.fireRate * (1 + WL.fireRatePerLevel * (wLevel - 1))); P.mag--; P.recoil = heavy ? 1.8 : 1; shake = Math.max(shake, heavy ? 0.12 : 0.05); flash.visible = true; flash.rotation.z = rnd(0, 6.28); muzzle.intensity = 9; audio.shot(heavy);
   let anyHit = false, anyHead = false;
   for (let i = 0; i < w.pellets; i++) {
     const h = trace(eyeP.copy(camera.position), aimDir(rnd(-0.5, 0.5) * sp, rnd(-0.5, 0.5) * sp), max); tmp.copy(eyeP).addScaledVector(dir, h.dist);
     const tr = tracers[(spI + i) % tracers.length]; view.getWorldPosition(tr.m.position); tr.m.scale.z = tr.m.position.distanceTo(tmp); tr.m.lookAt(tmp); tr.m.position.lerp(tmp, 0.5); (tr.m.material as THREE.MeshBasicMaterial).color.set(hex(w.color)).multiplyScalar(3); tr.m.visible = true; tr.life = 0.05;
     burst(tmp.x, tmp.y, tmp.z, h.e ? 8 : 4, h.e ? 3.5 : 2);
-    if (h.e) { anyHit = true; anyHead ||= h.head; h.e.hp -= w.damage * G.dmgMult * (h.head ? 2 : 1) * (P.power > 0 ? 2 : 1); if (h.e.hp <= 0) kill(h.e, dir); }
+    if (h.e) { anyHit = true; anyHead ||= h.head; h.e.hp -= w.damage * G.dmgMult * (h.head ? 2 : 1) * (P.power > 0 ? 2 : 1) * (1 + WL.damagePerLevel * (wLevel - 1)); if (h.e.hp <= 0) kill(h.e, dir); }
   }
   if (anyHit) { $('cross').classList.add('on'); setTimeout(() => $('cross').classList.remove('on'), 90); if (anyHead) audio.head(); else audio.hit(); }
-  if (tempRounds > 0 && --tempRounds <= 0) { G.weapon = baseWeapon; P.mag = baseWeapon.mag ?? 30; P.reload = 0; $('wname').textContent = t(baseWeapon.nameKey); note(t('pick.temp_out'), 3); audio.reload(); return; }
+  if (tempRounds > 0 && --tempRounds <= 0) { G.weapon = baseWeapon; P.mag = magSize(); P.reload = 0; $('wname').textContent = t(baseWeapon.nameKey); setWeapon(baseWeapon.id, wLevel); note(t('pick.temp_out'), 3); audio.reload(); return; }
   if (P.mag <= 0) startReload();
 }
-function startReload() { if (P.reload > 0 || P.mag >= (G.weapon.mag ?? 30)) return; P.reload = 1.5; note(t('fps.reload'), 1.5); audio.reload(); }
+function startReload() { if (P.reload > 0 || P.mag >= (magSize())) return; P.reload = 1.5; note(t('fps.reload'), 1.5); audio.reload(); }
 
 // ---------- Enemigos (comportamiento definido por enemies.json) ----------
 function shoot(e: Enemy, tgt: { x: number; z: number }, d: number, tall: number) {
@@ -236,7 +245,7 @@ function tickEnemy(e: Enemy, dt: number) {
 // ---------- Fin de partida ----------
 function lock() { if (!TOUCH && !G.bot) { try { void (renderer.domElement.requestPointerLock() as unknown as Promise<void>)?.catch?.(() => undefined); } catch { /* sin bloqueo: se mira arrastrando */ } } }
 function end(won: boolean) {
-  G.ended = true; G.playing = false; $('wp').style.display = $('arrow').style.display = 'none'; document.exitPointerLock?.(); if (won) audio.win(); else audio.lose();
+  G.ended = true; G.playing = false; $('wp').style.display = $('arrow').style.display = 'none'; $('banner').style.opacity = '0'; document.exitPointerLock?.(); if (won) audio.win(); else audio.lose();
   setTimeout(() => { if (!won && P.hp <= 0 && !G.continued && ads.isRewardedReady()) continuePrompt(saves.data.purchases.removeAds); else summary(won); }, G.bot ? 0 : 1100);
 }
 async function reward(place: 'continue' | 'double_coins') { return saves.data.purchases.removeAds || ads.showRewarded(place); }
@@ -263,7 +272,7 @@ function pause() { if (!G.playing) return; G.playing = false; G.paused = true; d
 
 // ---------- Controles: WASD o flechas + ratón; táctil: stick izquierdo y arrastre derecho ----------
 const keys = new Set<string>(); const move = { x: 0, z: 0 }; let mouseFire = false, locked = false, crouchBtn = false;
-const eyeY = () => 1.65 - 0.7 * P.crouch;
+const eyeY = () => 1.65 - 0.7 * P.crouch + P.y;
 addEventListener('keydown', (e) => { const k = e.key.toLowerCase(); keys.add(k); if (k.startsWith('arrow') || k === ' ' || k === 'control') e.preventDefault(); if (k === 'r') startReload(); if (k === 'escape' || k === 'p') pause(); });
 addEventListener('keyup', (e) => keys.delete(e.key.toLowerCase()));
 addEventListener('blur', () => { keys.clear(); pause(); });
@@ -312,6 +321,7 @@ function drawHud() {
   const bar = boss?.alive ? [boss.hp / boss.maxHp, t(boss.def.nameKey), '#ff3b30'] as const : convoy ? [convoy.hp / convoy.max, t('hud.convoy'), '#ffb347'] as const : null;
   $('bar2').style.display = bar ? 'block' : 'none'; $('sub2').textContent = bar ? bar[1] : ''; if (bar) { const f = $('bar2').firstElementChild as HTMLElement; f.style.width = Math.max(0, bar[0]) * 100 + '%'; f.style.background = bar[2]; }
   $('hp').style.width = (Math.max(0, P.hp) / P.maxHp) * 100 + '%'; $('hpn').textContent = String(Math.max(0, Math.round(P.hp))); $('mag').textContent = String(P.mag); $('coins').textContent = `◆ ${G.coins}`;
+  { const need = wLevel < 3 ? WL.kills[wLevel - 1] : 1, prev = wLevel > 1 ? WL.kills[wLevel - 2] : 0; ($('xp').firstElementChild as HTMLElement).style.width = (wLevel >= 3 ? 100 : ((wXp - prev) / (need - prev)) * 100) + '%'; $('wlvl').textContent = wLevel >= 3 ? t('hud.wmax') : t('hud.wlevel', { n: wLevel }); }
   $('buffs').textContent = [P.shield > 0 ? t('hud.shield', { n: Math.ceil(P.shield) }) : '', P.power > 0 ? t('hud.power', { s: Math.ceil(P.power) }) : '', tempRounds > 0 ? t('hud.rounds', { n: tempRounds }) : ''].filter(Boolean).join('  ·  ');
 }
 
@@ -337,13 +347,16 @@ function step(dt: number) {
     let wx = 0, wz = 0;
     if (G.bot) { const b = botInput(); wx = b.mx; wz = b.mz; }
     else {
-      const mx = move.x + (+(keys.has('d') || keys.has('arrowright')) - +(keys.has('a') || keys.has('arrowleft'))), mz = move.z + (+(keys.has('s') || keys.has('arrowdown')) - +(keys.has('w') || keys.has('arrowup')));
+      const mx = move.x + (+keys.has('d') - +keys.has('a')), mz = move.z + (+(keys.has('s') || keys.has('arrowdown')) - +(keys.has('w') || keys.has('arrowup')));
+      P.yaw += (+keys.has('arrowleft') - +keys.has('arrowright')) * 2.3 * dt; // las flechas laterales giran la vista
+      if (keys.has(' ') && P.y === 0) { P.vy = 5.2; audio.step(); }
       const s = Math.sin(P.yaw), c = Math.cos(P.yaw); wx = mx * c + mz * s; wz = mz * c - mx * s;
     }
     const down = crouchBtn || keys.has('c') || keys.has('control') || keys.has('shift'); P.crouch = THREE.MathUtils.clamp(P.crouch + (down ? 1 : -1) * dt * 7, 0, 1);
     const ml = Math.hypot(wx, wz);
     if (ml > 0.1) { const k = (P.speed * (1 - 0.5 * P.crouch)) / Math.max(ml, 1); P.x += wx * k * dt; P.z += wz * k * dt; speed = Math.min(ml, 1); if ((P.stepT -= dt * speed) <= 0) { P.stepT = 0.42; audio.step(); } }
     collide(P, 0.6);
+    if (P.y > 0 || P.vy > 0) { P.vy -= 15 * dt; P.y = Math.max(0, P.y + P.vy * dt); if (P.y === 0) P.vy = 0; }
     if (P.hp < P.maxHp && time - P.lastHurt > F.regenDelay) P.hp = Math.min(P.maxHp, P.hp + F.regenPerSecond * D.regen * dt); // la vida se recupera si te cubres
     camera.position.set(P.x, eyeY(), P.z); camera.rotation.set(P.pitch, P.yaw, 0); camera.updateMatrixWorld();
     if (D.assist && !G.bot) { // ayuda al apuntar: la mira se acerca sola a la máquina que casi tienes encima
@@ -357,7 +370,7 @@ function step(dt: number) {
     }
     const aim = trace(eyeP.copy(camera.position), aimDir(), Math.max(G.weapon.range * U * 2.5, 18));
     const firing = (locked && mouseFire) || ((TOUCH || G.bot || !locked || D.autoFire) && !!aim.e); P.fireCd -= dt;
-    if (P.reload > 0) { if ((P.reload -= dt) <= 0) P.mag = Math.min(G.weapon.mag ?? 30, tempRounds > 0 ? tempRounds : 999); } else if (firing && P.fireCd <= 0) fire();
+    if (P.reload > 0) { if ((P.reload -= dt) <= 0) P.mag = Math.min(magSize(), tempRounds > 0 ? tempRounds : 999); } else if (firing && P.fireCd <= 0) fire();
     const d = G.director!;
     if (gate >= 0 && (gateT -= dt) <= 0 && !(d instanceof EndlessDirector)) nextGate();
     for (const req of d.update(dt, enemies.filter((e) => e.alive).length)) spawn(req);
@@ -402,6 +415,7 @@ function step(dt: number) {
   for (let i = 0; i < SP; i++) if (spLife[i] > 0) { const k = i * 3; spLife[i] -= dt; spVel[k + 1] -= 12 * dt; spPos[k] += spVel[k] * dt; spPos[k + 1] += spVel[k + 1] * dt; spPos[k + 2] += spVel[k + 2] * dt; if (spLife[i] <= 0) spPos[k + 1] = -99; }
   for (let i = 0; i < emberPos.length; i += 3) { emberPos[i] += dt * 0.5; emberPos[i + 1] += dt * 0.45; if (emberPos[i + 1] > 10) { emberPos[i] = P.x + rnd(-30, 30); emberPos[i + 1] = 0; emberPos[i + 2] = P.z + rnd(-30, 30); } }
   if (noteT > 0 && (noteT -= dt) <= 0) $('note').textContent = '';
+  if (bannerT > 0 && (bannerT -= dt) <= 0) $('banner').style.opacity = '0';
 }
 const clock = new THREE.Clock();
 function frame() {
